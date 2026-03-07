@@ -96,7 +96,7 @@ print(JSON.stringify(item, null, 2));`,
 // Exercises all safe-to-test APIs with Arrange/Act/Assert
 // Version: 1.8.1
 // ============================================================
-print('API Test Suite v1.8.2');
+print('API Test Suite v1.8.3');
 
 // ── Section 1: Config & Test Mini-Framework ─────────────
 
@@ -768,7 +768,7 @@ await test('publishLanguageSpecificItems', async () => {
 group('Languages - Mutations');
 
 await test('addLanguage + deleteLanguage', async () => {
-  const result = await sc.Languages.addLanguage({ languageCode: 'zu-ZA' });
+  const result = await sc.Languages.addLanguage({ languageCode: 'zu', regionCode: 'ZA' });
   assertNotNull(result, 'add language result');
   cleanup.languages.push('zu-ZA');
   const langs = await sc.Languages.getLanguages();
@@ -780,8 +780,8 @@ await test('addLanguage + deleteLanguage', async () => {
 });
 
 await test('deleteLanguages (batch)', async () => {
-  await sc.Languages.addLanguage({ languageCode: 'af-ZA' });
-  await sc.Languages.addLanguage({ languageCode: 'sq-AL' });
+  await sc.Languages.addLanguage({ languageCode: 'af', regionCode: 'ZA' });
+  await sc.Languages.addLanguage({ languageCode: 'sq', regionCode: 'AL' });
   cleanup.languages.push('af-ZA', 'sq-AL');
   const result = await sc.Languages.deleteLanguages(['af-ZA', 'sq-AL']);
   assertNotNull(result, 'delete languages result');
