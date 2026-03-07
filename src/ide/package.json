@@ -2,6 +2,7 @@
   "name": "xmcloud-extension-starter",
   "version": "1.0.0",
   "scripts": {
+    "predev": "tsx scripts/generate-help.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

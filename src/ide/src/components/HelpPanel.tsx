@@ -54,7 +54,7 @@ function MethodCard({ method, expanded, onToggle, onInsert }: {
       {expanded && (
         <div className="px-2.5 pb-2.5 space-y-2">
           <code className="block text-[11px] bg-muted/50 rounded px-2 py-1 overflow-x-auto whitespace-pre-wrap break-all">
-            Sitecore.{method.name}{method.signature.replace(/^\(/, "(\n  ").replace(/, /g, ",\n  ").replace(/\) =>/, "\n) =>")}
+            {method.qualifiedName}{method.signature.replace(/^\(/, "(\n  ").replace(/, /g, ",\n  ").replace(/\) =>/, "\n) =>")}
           </code>
 
           <p className="text-xs text-muted-foreground">{method.description}</p>

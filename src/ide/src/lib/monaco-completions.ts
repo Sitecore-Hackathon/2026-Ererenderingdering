@@ -723,6 +723,7 @@ const sitecoreMethods: {
   },
 ];
 
+// ── Utilities ─────────────────────────────────────────────
 const utilityFunctions: {
   label: string;
   detail: string;

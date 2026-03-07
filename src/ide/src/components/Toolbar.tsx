@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Play, Save, FolderOpen, Trash2, Loader2, Database, Laptop, BookOpen } from "lucide-react";
+import { Play, Save, FolderOpen, Trash2, Loader2, BookOpen } from "lucide-react";
 
 interface ToolbarProps {
   onRun: () => void;
@@ -12,10 +12,9 @@ interface ToolbarProps {
   isRunning: boolean;
   isClientReady: boolean;
   helpOpen: boolean;
-  storageMode?: "sitecore" | "local";
 }
 
-export function Toolbar({ onRun, onSave, onLoad, onClear, onToggleHelp, isRunning, isClientReady, helpOpen, storageMode }: ToolbarProps) {
+export function Toolbar({ onRun, onSave, onLoad, onClear, onToggleHelp, isRunning, isClientReady, helpOpen }: ToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b bg-card">
       <Button
@@ -47,15 +46,6 @@ export function Toolbar({ onRun, onSave, onLoad, onClear, onToggleHelp, isRunnin
         Help
       </Button>
       <div className="ml-auto flex items-center gap-2">
-        {storageMode && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            {storageMode === "sitecore" ? (
-              <><Database className="h-3.5 w-3.5" /> Sitecore</>
-            ) : (
-              <><Laptop className="h-3.5 w-3.5" /> Local</>
-            )}
-          </span>
-        )}
         {!isClientReady && (
           <span className="text-xs text-muted-foreground">
             Connecting to SDK...

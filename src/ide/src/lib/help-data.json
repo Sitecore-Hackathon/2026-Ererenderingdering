@@ -181,6 +181,15 @@
         "getMeta",
         "configurePageDesigns"
       ]
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "methods": [
+        "print",
+        "render",
+        "help"
+      ]
     }
   ],
   "methods": {
@@ -2832,6 +2841,82 @@
       "examples": [],
       "snippet": "Sitecore.configurePageDesigns(\"${1:siteName}\", [{ templateId: \"${2:templateId}\", pageDesignId: \"${3:pageDesignId}\" }])",
       "danger": "mutating"
+    },
+    "print": {
+      "name": "print",
+      "qualifiedName": "print",
+      "category": "Utilities",
+      "categoryId": "utilities",
+      "signature": "(...args: any[]) => void",
+      "description": "The globally-unique identifier for the item",
+      "params": [],
+      "returns": "void",
+      "examples": [
+        "const data = await sc.graphql(`\r\n  query {\r\n    item(where: { path: \"/sitecore/content\" }) {\r\n      itemId\r\n      name\r\n    }\r\n  }\r\n`);",
+        "const item = await sc.getItem(\"/sitecore/content/Home\");\r\nconst item = await sc.getItem(\"110D559F-DEA5-42EA-9C1C-8A5DF7E70EF9\");",
+        "const children = await sc.getItemChildren(\"/sitecore/content/Home\");",
+        "const results = await sc.search({\r\n  searchStatement: {\r\n    criteria: [{ field: \"_name\", value: \"Home\", criteriaType: \"CONTAINS\" }]\r\n  },\r\n  paging: { pageSize: 10 }\r\n});",
+        "const item = await sc.createItem(parentId, templateId, \"My Page\", { Title: \"Hello\" });",
+        "await sc.updateItem(itemId, { Title: \"New Title\", Body: \"<p>Content</p>\" });",
+        "const queue = await sc.getPublishingQueue({\r\n  sort: { field: \"date\", direction: \"DESCENDING\" }\r\n});",
+        "const result = await sc.publishItem({\r\n  rootItemId: itemId,\r\n  languages: [\"en\"],\r\n  targetDatabases: [\"web\"],\r\n  publishItemMode: \"SMART\",\r\n  publishSubItems: true\r\n});\r\n// Track: await sc.getPublishingStatus(result.operationId);",
+        "await sc.publishLanguageSpecificItems({\r\n  itemsToPublish: [{ id: itemId, languages: [\"en\", \"fr\"] }],\r\n  targetDatabases: [\"web\"],\r\n  publishItemMode: \"SMART\"\r\n});",
+        "await sc.publishSite({\r\n  languages: [\"en\"],\r\n  targetDatabases: [\"web\"],\r\n  publishSiteMode: \"INCREMENTAL\"\r\n});",
+        "await sc.rebuildIndexes([\"sitecore_master_index\"]);",
+        "const wf = await sc.getWorkflow(workflowId);\r\nconst wf = await sc.getWorkflow({ itemId: myItemId });",
+        "await sc.scaffoldSolution({\r\n  siteName: \"MySite\",\r\n  hostName: \"mysite.com\",\r\n  language: \"en\",\r\n  templateId: templateId\r\n});",
+        "await sc.createSiteCollection({ name: \"MyCollection\", displayName: \"My Collection\" });",
+        "await sc.addLanguage({ languageCode: \"fr-FR\" });",
+        "await sc.createUser({ userName: \"sitecore\\\\editor1\", password: \"P@ss1\", email: \"ed@co.com\" });",
+        "// Get an item\r\nconst item = await sc.getItem(\"/sitecore/content/Home\");\r\n// Search for items\r\nconst results = await sc.search({\r\n  searchStatement: { criteria: [{ field: \"_name\", value: \"Home\", criteriaType: \"CONTAINS\" }] },\r\n  paging: { pageSize: 10 }\r\n});\r\n// Publish\r\nconst pub = await sc.publishItem({\r\n  rootItemId: item.itemId,\r\n  languages: [\"en\"],\r\n  targetDatabases: [\"web\"],\r\n  publishItemMode: \"SMART\"\r\n});",
+        "print(\"Hello\", { key: \"value\" });"
+      ],
+      "snippet": "print(${1})",
+      "danger": "safe"
+    },
+    "render": {
+      "name": "render",
+      "qualifiedName": "render",
+      "category": "Utilities",
+      "categoryId": "utilities",
+      "signature": "(html: string) => void",
+      "description": "Render HTML content in the Results tab.",
+      "params": [
+        {
+          "name": "html",
+          "type": "string",
+          "description": "HTML string to render",
+          "optional": false
+        }
+      ],
+      "returns": "void",
+      "examples": [
+        "render(`<h1>Hello World</h1><p>This is rendered HTML.</p>`);"
+      ],
+      "snippet": "render(`${1:<h1>Hello</h1>}`)",
+      "danger": "safe"
+    },
+    "help": {
+      "name": "help",
+      "qualifiedName": "help",
+      "category": "Utilities",
+      "categoryId": "utilities",
+      "signature": "(query?: string) => void",
+      "description": "Display help for Sitecore SDK methods. - `help()` — overview of all categories - `help(\"getItem\")` — full docs for a specific method - `help(\"content\")` — all methods in a category - `help(\"search term\")` — fuzzy search across method names and descriptions",
+      "params": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Method name, category name, or search term",
+          "optional": true
+        }
+      ],
+      "returns": "void",
+      "examples": [
+        "help();\r\nhelp(\"getItem\");\r\nhelp(\"publishing\");"
+      ],
+      "snippet": "help(\"${1}\")",
+      "danger": "safe"
     }
   },
   "types": {
@@ -4102,6 +4187,56 @@
           "description": "Use supported language definition as fallback (default: true)"
         }
       ]
+    },
+    "SitecoreContentNamespace": {
+      "name": "SitecoreContentNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecorePublishingNamespace": {
+      "name": "SitecorePublishingNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreIndexesNamespace": {
+      "name": "SitecoreIndexesNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreWorkflowsNamespace": {
+      "name": "SitecoreWorkflowsNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreTranslationNamespace": {
+      "name": "SitecoreTranslationNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreTemplatesNamespace": {
+      "name": "SitecoreTemplatesNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreSitesNamespace": {
+      "name": "SitecoreSitesNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreLanguagesNamespace": {
+      "name": "SitecoreLanguagesNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecoreSecurityNamespace": {
+      "name": "SitecoreSecurityNamespace",
+      "description": "",
+      "fields": []
+    },
+    "SitecorePresentationNamespace": {
+      "name": "SitecorePresentationNamespace",
+      "description": "",
+      "fields": []
     }
   }
 }

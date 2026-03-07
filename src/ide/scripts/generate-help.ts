@@ -29,8 +29,8 @@ function parseCompletions(): CompletionEntry[] {
   const entries: CompletionEntry[] = [];
   let currentCategory = "Core";
 
-  // Stop at utilityFunctions
-  const methodsSection = completionsFile.split("const utilityFunctions")[0];
+  // Parse both sitecoreMethods and utilityFunctions
+  const methodsSection = completionsFile.split("import {")[0];
   const lines = methodsSection.split("\n");
   let inObj = false;
   let braceDepth = 0;
@@ -58,7 +58,7 @@ function parseCompletions(): CompletionEntry[] {
         if (ch === "}") braceDepth--;
       }
       if (braceDepth <= 0) {
-        const labelMatch = currentObj.match(/label:\s*"Sitecore\.(\w+)"/);
+        const labelMatch = currentObj.match(/label:\s*"(?:Sitecore\.)?(\w+)"/);
         const detailMatch = currentObj.match(/detail:\s*"(.+?)"/);
         const docMatch = currentObj.match(/documentation:\s*"(.+?)"/);
 
@@ -256,6 +256,71 @@ function parseDts(): { methods: Record<string, MethodInfo>; types: Record<string
     };
   }
 
+  // ── Parse top-level declare function entries ──
+  const declFnRe = /(\/\*\*[\s\S]*?\*\/)\s*\ndeclare\s+function\s+(\w+)\s*\(([\s\S]*?)\)\s*:\s*(\w+)\s*;/g;
+  let df;
+  while ((df = declFnRe.exec(dtsFile)) !== null) {
+    const jsdoc = df[1];
+    const name = df[2];
+    const paramsStr = df[3];
+    const returnType = df[4].trim();
+
+    const descMatch = jsdoc.match(/\/\*\*\s*\n?\s*\*?\s*([\s\S]*?)(?:\n\s*\*\s*@|\s*\*\/)/);
+    let description = "";
+    if (descMatch) {
+      description = descMatch[1]
+        .split("\n")
+        .map((l) => l.replace(/^\s*\*\s?/, "").trim())
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    const paramTags: { name: string; description: string }[] = [];
+    const paramRe = /@param\s+(\w+)\s*-?\s*(.*)/g;
+    let pm;
+    while ((pm = paramRe.exec(jsdoc)) !== null) {
+      paramTags.push({ name: pm[1], description: pm[2].trim() });
+    }
+
+    const examples: string[] = [];
+    const exampleRe = /@example\s*\n([\s\S]*?)(?=\s*\*\s*@|\s*\*\/)/g;
+    let em;
+    while ((em = exampleRe.exec(jsdoc)) !== null) {
+      const code = em[1]
+        .split("\n")
+        .map((l) => l.replace(/^\s*\*\s?/, ""))
+        .filter((l) => l.trim())
+        .join("\n")
+        .trim();
+      if (code) examples.push(code);
+    }
+
+    const params: ParamInfo[] = [];
+    if (paramsStr.trim()) {
+      const paramParts = splitParams(paramsStr);
+      for (const part of paramParts) {
+        const pMatch = part.trim().match(/^(\w+)(\??)\s*:\s*([\s\S]+)$/);
+        if (pMatch) {
+          const pName = pMatch[1];
+          const tagDesc = paramTags.find((t) => t.name === pName)?.description ?? "";
+          params.push({ name: pName, type: pMatch[3].trim(), description: tagDesc, optional: pMatch[2] === "?" });
+        }
+      }
+    }
+
+    // Only add if not already parsed from SitecoreSDK
+    if (!methods[name]) {
+      methods[name] = {
+        name,
+        signature: `(${paramsStr.trim()}) => ${returnType}`,
+        description,
+        params,
+        returns: returnType,
+        examples,
+      };
+    }
+  }
+
   return { methods, types };
 }
 
@@ -338,9 +403,10 @@ for (const comp of completions) {
   }
   categoriesMap[catId].methods.push(comp.name);
 
+  const isUtility = comp.category === "Utilities";
   methodsMap[comp.name] = {
     name: comp.name,
-    qualifiedName: `Sitecore.${comp.name}`,
+    qualifiedName: isUtility ? comp.name : `Sitecore.${comp.name}`,
     category: comp.category,
     categoryId: catId,
     signature: dts?.signature ?? comp.detail,

@@ -152,7 +152,6 @@ export function ScriptingConsole() {
           isRunning={isRunning}
           isClientReady={isInitialized && !!client}
           helpOpen={helpOpen}
-          storageMode={storageMode}
         />
 
         <div className="flex-1 min-h-0">

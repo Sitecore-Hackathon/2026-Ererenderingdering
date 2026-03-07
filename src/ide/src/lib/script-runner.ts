@@ -61,7 +61,7 @@ export async function runScript(
 
     if (method) {
       const lines = [
-        `Sitecore.${method.name}`,
+        method.qualifiedName,
         "-".repeat(40),
         method.description,
         "",
@@ -94,7 +94,7 @@ export async function runScript(
       for (const name of cat.methods) {
         const m = methods[name];
         if (m) {
-          lines.push(`  Sitecore.${m.name}`);
+          lines.push(`  ${m.qualifiedName}`);
           lines.push(`    ${m.description}`);
         }
       }
@@ -110,7 +110,7 @@ export async function runScript(
     if (matches.length > 0) {
       const lines = [`Search results for "${query}" (${matches.length} matches):`, ""];
       for (const m of matches) {
-        lines.push(`  Sitecore.${m.name} - ${m.description}`);
+        lines.push(`  ${m.qualifiedName} - ${m.description}`);
       }
       print(lines.join("\n"));
     } else {
