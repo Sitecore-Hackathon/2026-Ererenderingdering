@@ -91,8 +91,9 @@ export function registerCompletions(monaco: any) {
 
       const suggestions: any[] = [];
 
-      // Sitecore.* completions
-      if (textBefore.endsWith("Sitecore.")) {
+      // Sitecore.* or sc.* completions
+      if (textBefore.endsWith("Sitecore.") || textBefore.endsWith("sc.")) {
+        const prefix = textBefore.endsWith("sc.") ? "sc." : "Sitecore.";
         for (const method of sitecoreMethods) {
           const methodName = method.label.replace("Sitecore.", "");
           suggestions.push({
@@ -106,7 +107,7 @@ export function registerCompletions(monaco: any) {
           });
         }
       } else {
-        // Top-level completions
+        // Top-level completions for both Sitecore.* and sc.*
         for (const method of sitecoreMethods) {
           suggestions.push({
             label: method.label,
@@ -114,6 +115,16 @@ export function registerCompletions(monaco: any) {
             detail: method.detail,
             documentation: method.documentation,
             insertText: method.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+          });
+          // sc.* alias
+          suggestions.push({
+            label: method.label.replace("Sitecore.", "sc."),
+            kind: monaco.languages.CompletionItemKind.Method,
+            detail: method.detail,
+            documentation: method.documentation + " (shorthand for Sitecore.*)",
+            insertText: method.insertText.replace("Sitecore.", "sc."),
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
           });

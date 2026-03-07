@@ -61,12 +61,13 @@ export async function runScript(
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
     const fn = new AsyncFunction(
       "Sitecore",
+      "sc",
       "print",
       "render",
       "console",
       code
     );
-    returnValue = await fn(sitecoreHelpers, print, render, proxyConsole);
+    returnValue = await fn(sitecoreHelpers, sitecoreHelpers, print, render, proxyConsole);
   } catch (e) {
     error = e instanceof Error ? e : new Error(String(e));
     consoleOutput.push({

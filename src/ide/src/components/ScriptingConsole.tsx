@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMarketplaceClient } from "@/src/utils/hooks/useMarketplaceClient";
 import { createSitecoreHelpers } from "@/src/lib/sitecore-helpers";
@@ -12,10 +12,10 @@ import { ResultsPanel } from "./ResultsPanel";
 import { ScriptLibraryDialog } from "./ScriptLibraryDialog";
 
 const DEFAULT_CODE = `// Sitecore JS Scripting Console
-// Use Sitecore.* methods, print(), and render()
+// Use Sitecore.* (or sc.* shorthand), print(), and render()
 // Press Ctrl+Enter to run
 
-const ctx = await Sitecore.getContext();
+const ctx = await sc.getContext();
 print("Application context loaded:");
 print(JSON.stringify(ctx, null, 2));
 `;
@@ -29,6 +29,29 @@ export function ScriptingConsole() {
   const [activeTab, setActiveTab] = useState("console");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"save" | "load">("save");
+  const [outputHeight, setOutputHeight] = useState(250);
+  const isDragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isDragging.current || !containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newHeight = containerRect.bottom - e.clientY;
+      setOutputHeight(Math.max(80, Math.min(newHeight, containerRect.height - 100)));
+    }
+    function onMouseUp() {
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
 
   const helpers = useMemo(() => {
     if (!client) return null;
@@ -95,7 +118,7 @@ export function ScriptingConsole() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div ref={containerRef} className="h-screen flex flex-col bg-background">
       <Toolbar
         onRun={handleRun}
         onSave={handleSave}
@@ -113,9 +136,22 @@ export function ScriptingConsole() {
         />
       </div>
 
-      <div className="h-[250px] border-t flex flex-col">
+      {/* Drag handle */}
+      <div
+        className="h-2 bg-border hover:bg-primary/40 active:bg-primary/50 cursor-row-resize shrink-0 transition-colors flex items-center justify-center"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          isDragging.current = true;
+          document.body.style.cursor = "row-resize";
+          document.body.style.userSelect = "none";
+        }}
+      >
+        <div className="w-10 h-0.5 rounded-full bg-muted-foreground/40" />
+      </div>
+
+      <div style={{ height: outputHeight }} className="flex flex-col min-h-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          <TabsList className="w-fit rounded-none border-b px-2">
+          <TabsList variant="line" className="px-2 border-b">
             <TabsTrigger value="console" className="text-xs">
               Console
             </TabsTrigger>

@@ -11,6 +11,14 @@ export interface SitecoreHelpers {
   updateItem: (id: string, path: string, fields: Record<string, string>) => Promise<any>;
 }
 
+function unwrap(res: any): any {
+  if (res?.isError || res?.status === "error") {
+    const msg = res.error?.message || res.error?.detail || JSON.stringify(res.error) || "Unknown SDK error";
+    throw new Error(`SDK error: ${msg}`);
+  }
+  return res?.data ?? res;
+}
+
 export function createSitecoreHelpers(client: ClientSDK): SitecoreHelpers {
   let cachedContextId: string | null = null;
 
@@ -39,15 +47,30 @@ export function createSitecoreHelpers(client: ClientSDK): SitecoreHelpers {
           body: { query, variables },
         },
       });
-      return (res as any).data;
+      return unwrap(res);
     },
 
     async listSites() {
       const sitecoreContextId = await getSitecoreContextId();
-      const res = await (client as any).query("xmc.sites.listSites", {
-        params: { query: { sitecoreContextId } },
+      const res = await client.mutate("xmc.authoring.graphql", {
+        params: {
+          query: { sitecoreContextId },
+          body: {
+            query: `
+              query {
+                sites {
+                  name
+                  hostName
+                  language
+                  rootPath
+                }
+              }
+            `,
+          },
+        },
       });
-      return (res as any).data;
+      const data = unwrap(res);
+      return data?.data?.sites ?? data;
     },
 
     async retrievePage(pageId: string, site: string, language?: string) {
@@ -58,7 +81,7 @@ export function createSitecoreHelpers(client: ClientSDK): SitecoreHelpers {
           path: { pageId },
         },
       });
-      return (res as any).data;
+      return unwrap(res);
     },
 
     async reloadCanvas() {
