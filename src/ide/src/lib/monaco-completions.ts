@@ -743,7 +743,26 @@ const utilityFunctions: {
   },
 ];
 
+import { sitecoreSdkDts } from "./sitecore-sdk-dts";
+
 export function registerCompletions(monaco: any) {
+  // Register type definitions for IntelliSense, hover, and signature help
+  const jsDefaults = monaco.languages.typescript.javascriptDefaults;
+  jsDefaults.setDiagnosticsOptions({
+    noSemanticValidation: false,
+    noSyntaxValidation: false,
+  });
+  jsDefaults.setCompilerOptions({
+    target: monaco.languages.typescript.ScriptTarget.ESNext,
+    allowNonTsExtensions: true,
+    allowJs: true,
+    checkJs: false,
+  });
+  jsDefaults.addExtraLib(
+    sitecoreSdkDts,
+    "ts:sitecore-sdk.d.ts"
+  );
+
   monaco.languages.registerCompletionItemProvider("javascript", {
     triggerCharacters: ["."],
     provideCompletionItems(model: any, position: any) {
