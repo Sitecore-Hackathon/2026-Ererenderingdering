@@ -1,7 +1,7 @@
 import type { SitecoreHelpers } from "./sitecore-helpers";
-import type { ScriptStorageBackend, SavedScript } from "./script-storage";
+import type { ScriptStorageBackend, SavedScript, ScriptTreeNode } from "./script-storage";
 import {
-  EXAMPLES_PATH,
+  SCRIPT_LIBRARY_PATH,
   USER_SCRIPTS_PATH,
 } from "./items";
 
@@ -15,17 +15,71 @@ function itemToScript(item: any): SavedScript {
   };
 }
 
+function isScriptItem(item: any): boolean {
+  return item.fields?.nodes?.some((f: any) => f.name === "Script") ?? false;
+}
+
 export function createSitecoreScriptStorage(helpers: SitecoreHelpers, jsScriptTemplateId: string): ScriptStorageBackend {
-  async function listScripts(): Promise<SavedScript[]> {
-    const [examples, userScripts] = await Promise.all([
-      helpers.getItemChildren(EXAMPLES_PATH),
-      helpers.getItemChildren(USER_SCRIPTS_PATH),
-    ]);
-    return [...examples, ...userScripts].map(itemToScript);
+  async function listScriptsFromPath(path: string): Promise<SavedScript[]> {
+    const children = await helpers.getItemChildren(path);
+    const scripts: SavedScript[] = [];
+    for (const child of children) {
+      if (isScriptItem(child)) {
+        scripts.push(itemToScript(child));
+      } else {
+        // It's a folder — recurse
+        const subPath = `${path}/${child.name}`;
+        const subScripts = await listScriptsFromPath(subPath);
+        scripts.push(...subScripts);
+      }
+    }
+    return scripts;
+  }
+
+  async function buildTree(path: string): Promise<ScriptTreeNode[]> {
+    const children = await helpers.getItemChildren(path);
+    const nodes: ScriptTreeNode[] = [];
+    for (const child of children) {
+      if (isScriptItem(child)) {
+        nodes.push({
+          id: child.itemId,
+          name: child.name,
+          type: "script",
+          code: child.fields?.nodes?.find((f: any) => f.name === "Script")?.value ?? "",
+        });
+      } else {
+        const childPath = `${path}/${child.name}`;
+        const subNodes = await buildTree(childPath);
+        nodes.push({
+          id: child.itemId,
+          name: child.name,
+          type: "folder",
+          children: subNodes,
+        });
+      }
+    }
+    return nodes;
   }
 
   return {
-    listScripts,
+    async listScripts() {
+      const [scriptLib, userScripts] = await Promise.all([
+        listScriptsFromPath(SCRIPT_LIBRARY_PATH),
+        listScriptsFromPath(USER_SCRIPTS_PATH),
+      ]);
+      return [...scriptLib, ...userScripts];
+    },
+
+    async listTree() {
+      const [scriptLibChildren, userScriptsChildren] = await Promise.all([
+        buildTree(SCRIPT_LIBRARY_PATH),
+        buildTree(USER_SCRIPTS_PATH),
+      ]);
+      return [
+        { id: "script-library", name: "Script Library", type: "folder" as const, children: scriptLibChildren },
+        { id: "user-scripts", name: "User Scripts", type: "folder" as const, children: userScriptsChildren },
+      ];
+    },
 
     async saveScript(name: string, code: string) {
       const userScripts = await helpers.getItem(USER_SCRIPTS_PATH);
@@ -47,7 +101,7 @@ export function createSitecoreScriptStorage(helpers: SitecoreHelpers, jsScriptTe
     },
 
     async loadScript(id: string) {
-      const scripts = await listScripts();
+      const scripts = await this.listScripts();
       return scripts.find((s: SavedScript) => s.id === id);
     },
 
@@ -57,7 +111,7 @@ export function createSitecoreScriptStorage(helpers: SitecoreHelpers, jsScriptTe
       if (Object.keys(fields).length > 0) {
         await helpers.updateItem(id, fields);
       }
-      const scripts = await listScripts();
+      const scripts = await this.listScripts();
       return scripts.find((s: SavedScript) => s.id === id);
     },
 

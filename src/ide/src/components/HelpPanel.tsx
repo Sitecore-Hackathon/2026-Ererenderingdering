@@ -94,7 +94,7 @@ function MethodCard({ method, expanded, onToggle, onInsert }: {
           )}
 
           {onInsert && (
-            <Button size="sm" variant="secondary" className="h-6 text-[11px]" onClick={onInsert}>
+            <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={onInsert}>
               <Copy className="h-3 w-3 mr-1" />
               Insert
             </Button>

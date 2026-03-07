@@ -29,19 +29,19 @@ export function Toolbar({ onRun, onSave, onLoad, onClear, onToggleHelp, isRunnin
         )}
         {isRunning ? "Running..." : "Run"}
       </Button>
-      <Button size="sm" variant="secondary" onClick={onSave}>
+      <Button size="sm" variant="outline" onClick={onSave}>
         <Save className="h-4 w-4 mr-1" />
         Save
       </Button>
-      <Button size="sm" variant="secondary" onClick={onLoad}>
+      <Button size="sm" variant="outline" onClick={onLoad}>
         <FolderOpen className="h-4 w-4 mr-1" />
         Load
       </Button>
-      <Button size="sm" variant="secondary" onClick={onClear}>
+      <Button size="sm" variant="outline" onClick={onClear}>
         <Trash2 className="h-4 w-4 mr-1" />
         Clear
       </Button>
-      <Button size="sm" variant={helpOpen ? "default" : "secondary"} onClick={onToggleHelp}>
+      <Button size="sm" variant={helpOpen ? "default" : "outline"} onClick={onToggleHelp}>
         <BookOpen className="h-4 w-4 mr-1" />
         Help
       </Button>

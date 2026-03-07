@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Loader2 } from "lucide-react";
-import type { SavedScript, ScriptStorageBackend } from "@/src/lib/script-storage";
+import { Trash2, Loader2, ChevronRight, Folder, FolderOpen, FileCode2 } from "lucide-react";
+import type { SavedScript, ScriptStorageBackend, ScriptTreeNode } from "@/src/lib/script-storage";
 
 interface ScriptLibraryDialogProps {
   open: boolean;
@@ -22,6 +22,97 @@ interface ScriptLibraryDialogProps {
   backend: ScriptStorageBackend;
 }
 
+function TreeNode({
+  node,
+  depth,
+  selectedId,
+  onSelect,
+  onDoubleClick,
+  onDelete,
+  expandedIds,
+  toggleExpanded,
+}: {
+  node: ScriptTreeNode;
+  depth: number;
+  selectedId: string | null;
+  onSelect: (node: ScriptTreeNode) => void;
+  onDoubleClick: (node: ScriptTreeNode) => void;
+  onDelete: (id: string) => void;
+  expandedIds: Set<string>;
+  toggleExpanded: (id: string) => void;
+}) {
+  const isFolder = node.type === "folder";
+  const isExpanded = expandedIds.has(node.id);
+  const isSelected = selectedId === node.id;
+
+  return (
+    <>
+      <div
+        className={`flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-accent transition-colors select-none ${
+          isSelected ? "bg-accent" : ""
+        }`}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        onClick={() => {
+          if (isFolder) {
+            toggleExpanded(node.id);
+          } else {
+            onSelect(node);
+          }
+        }}
+        onDoubleClick={() => {
+          if (!isFolder) onDoubleClick(node);
+        }}
+      >
+        {isFolder ? (
+          <ChevronRight
+            className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
+              isExpanded ? "rotate-90" : ""
+            }`}
+          />
+        ) : (
+          <span className="w-3.5 shrink-0" />
+        )}
+        {isFolder ? (
+          isExpanded ? (
+            <FolderOpen className="h-4 w-4 shrink-0 text-yellow-600" />
+          ) : (
+            <Folder className="h-4 w-4 shrink-0 text-yellow-600" />
+          )
+        ) : (
+          <FileCode2 className="h-4 w-4 shrink-0 text-blue-500" />
+        )}
+        <span className="text-sm truncate flex-1">{node.name}</span>
+        {!isFolder && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0 shrink-0 opacity-0 group-hover:opacity-100 hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(node.id);
+            }}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      {isFolder && isExpanded && node.children?.map((child) => (
+        <TreeNode
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          selectedId={selectedId}
+          onSelect={onSelect}
+          onDoubleClick={onDoubleClick}
+          onDelete={onDelete}
+          expandedIds={expandedIds}
+          toggleExpanded={toggleExpanded}
+        />
+      ))}
+    </>
+  );
+}
+
 export function ScriptLibraryDialog({
   open,
   onOpenChange,
@@ -31,25 +122,41 @@ export function ScriptLibraryDialog({
   onSaved,
   backend,
 }: ScriptLibraryDialogProps) {
-  const [scripts, setScripts] = useState<SavedScript[]>([]);
+  const [tree, setTree] = useState<ScriptTreeNode[]>([]);
   const [saveName, setSaveName] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<ScriptTreeNode | null>(null);
   const [loading, setLoading] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const loadTree = useCallback(async () => {
+    setLoading(true);
+    try {
+      const t = await backend.listTree();
+      setTree(t);
+      // Auto-expand top-level folders
+      setExpandedIds(new Set(t.map((n) => n.id)));
+    } catch {
+      setTree([]);
+    }
+    setLoading(false);
+  }, [backend]);
 
   useEffect(() => {
     if (open) {
       setSaveName("");
-      setSelectedId(null);
-      setLoading(true);
-      backend.listScripts().then((s) => {
-        setScripts(s);
-        setLoading(false);
-      }).catch(() => {
-        setScripts([]);
-        setLoading(false);
-      });
+      setSelectedNode(null);
+      loadTree();
     }
-  }, [open, backend]);
+  }, [open, loadTree]);
+
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   async function handleSave() {
     if (!saveName.trim()) return;
@@ -61,20 +168,33 @@ export function ScriptLibraryDialog({
   }
 
   function handleLoad() {
-    const script = scripts.find((s) => s.id === selectedId);
-    if (script) {
-      onLoad?.(script);
-      onOpenChange(false);
-    }
+    if (!selectedNode || selectedNode.type !== "script") return;
+    onLoad?.({
+      id: selectedNode.id,
+      name: selectedNode.name,
+      code: selectedNode.code ?? "",
+      lastModified: Date.now(),
+    });
+    onOpenChange(false);
   }
 
   async function handleDelete(id: string) {
     setLoading(true);
     await backend.deleteScript(id);
-    const updated = await backend.listScripts();
-    setScripts(updated);
+    await loadTree();
     setLoading(false);
-    if (selectedId === id) setSelectedId(null);
+    if (selectedNode?.id === id) setSelectedNode(null);
+  }
+
+  function handleDoubleClick(node: ScriptTreeNode) {
+    if (node.type !== "script") return;
+    onLoad?.({
+      id: node.id,
+      name: node.name,
+      code: node.code ?? "",
+      lastModified: Date.now(),
+    });
+    onOpenChange(false);
   }
 
   return (
@@ -102,55 +222,38 @@ export function ScriptLibraryDialog({
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="max-h-[300px] overflow-auto border rounded-md">
+            <div className="max-h-[400px] overflow-auto border rounded-md">
               {loading ? (
                 <div className="p-4 flex items-center justify-center text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Loading scripts...
                 </div>
-              ) : scripts.length === 0 ? (
+              ) : tree.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">
                   No saved scripts
                 </div>
               ) : (
-                <div className="divide-y">
-                  {scripts.map((script) => (
-                    <div
-                      key={script.id}
-                      className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-accent transition-colors ${
-                        selectedId === script.id ? "bg-accent" : ""
-                      }`}
-                      onClick={() => setSelectedId(script.id)}
-                      onDoubleClick={() => {
-                        onLoad?.(script);
-                        onOpenChange(false);
-                      }}
-                    >
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-medium truncate">
-                          {script.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(script.lastModified).toLocaleString()}
-                        </span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(script.id);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                <div className="py-1">
+                  {tree.map((node) => (
+                    <TreeNode
+                      key={node.id}
+                      node={node}
+                      depth={0}
+                      selectedId={selectedNode?.id ?? null}
+                      onSelect={setSelectedNode}
+                      onDoubleClick={handleDoubleClick}
+                      onDelete={handleDelete}
+                      expandedIds={expandedIds}
+                      toggleExpanded={toggleExpanded}
+                    />
                   ))}
                 </div>
               )}
             </div>
-            <Button onClick={handleLoad} disabled={!selectedId}>
+            <Button
+              onClick={handleLoad}
+              disabled={!selectedNode || selectedNode.type !== "script"}
+            >
               Open
             </Button>
           </div>

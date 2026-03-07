@@ -7,8 +7,17 @@ export interface SavedScript {
   lastModified: number;
 }
 
+export interface ScriptTreeNode {
+  id: string;
+  name: string;
+  type: "folder" | "script";
+  children?: ScriptTreeNode[];
+  code?: string;
+}
+
 export interface ScriptStorageBackend {
   listScripts(): Promise<SavedScript[]>;
+  listTree(): Promise<ScriptTreeNode[]>;
   saveScript(name: string, code: string): Promise<SavedScript>;
   loadScript(id: string): Promise<SavedScript | undefined>;
   updateScript(id: string, updates: Partial<Pick<SavedScript, "name" | "code">>): Promise<SavedScript | undefined>;
@@ -587,6 +596,21 @@ export function createLocalScriptStorage(): ScriptStorageBackend {
   return {
     async listScripts() {
       return getScriptsFromStorage().sort((a, b) => b.lastModified - a.lastModified);
+    },
+
+    async listTree() {
+      const scripts = getScriptsFromStorage().sort((a, b) => a.name.localeCompare(b.name));
+      return [{
+        id: "local-scripts",
+        name: "Local Scripts",
+        type: "folder" as const,
+        children: scripts.map((s) => ({
+          id: s.id,
+          name: s.name,
+          type: "script" as const,
+          code: s.code,
+        })),
+      }];
     },
 
     async saveScript(name: string, code: string) {
