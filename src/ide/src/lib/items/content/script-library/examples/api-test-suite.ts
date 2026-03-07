@@ -304,13 +304,13 @@ await test('getDomains', async () => {
 });
 
 await test('createRole + getRole round-trip', async () => {
-  const roleName = 'sitecore\\\\' + TEST_PREFIX + 'role';
+  const roleName = 'sitecore\\\\SCTestRole' + Date.now();
   const created = await sc.Security.createRole(roleName);
   assertNotNull(created, 'created role');
   cleanup.roles.push(roleName);
   const fetched = await sc.Security.getRole(roleName);
   assertNotNull(fetched, 'fetched role');
-  assertContains(fetched.name, TEST_PREFIX, 'role name contains prefix');
+  assertContains(fetched.name, 'SCTestRole', 'role name contains prefix');
 });
 
 // ── Presentation (read-only) ──

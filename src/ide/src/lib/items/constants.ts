@@ -1,4 +1,4 @@
-export const MODULE_VERSION = "1.3.0";
+export const MODULE_VERSION = "1.3.1";
 export const MODULE_ROOT_PATH = "/sitecore/system/Modules/JavaScript Extensions";
 export const TEMPLATES_ROOT_PATH = "/sitecore/templates/Modules/JavaScript Extensions";
 export const SCRIPT_LIBRARY_PATH = MODULE_ROOT_PATH + "/Script Library";

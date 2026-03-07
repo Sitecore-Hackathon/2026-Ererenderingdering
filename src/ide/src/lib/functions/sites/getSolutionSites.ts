@@ -5,7 +5,7 @@ export function getSolutionSites({ gql }: HelperContext) {
     const data = await gql(`
       query GetSolutionSites($input: SolutionSitesInput) {
         solutionSites(input: $input) {
-          id name displayName description hostname language created sortOrder linkableSite
+          id name displayName description hostname language { name } created sortOrder linkableSite
           rootItem { itemId name path }
           siteCollection { id name }
           languages { name }
