@@ -32,12 +32,15 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>About Sitecore JavaScript Extensions</DialogTitle>
+          <div className="flex justify-center pt-2">
+            <img src="/logo.png" alt="Sitecore JavaScript Extensions" className="h-20 w-20" />
+          </div>
+          <DialogTitle className="text-center">Sitecore JavaScript Extensions</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 text-sm">
           <div>
             <span className="font-medium">Author:</span>{" "}
-            Anton Tishchenko, CTO of{" "}
+            <ExtLink href="https://www.linkedin.com/in/anton-tishchenko/">Anton Tishchenko</ExtLink>, CTO of{" "}
             <ExtLink href="https://exdst.com/">EXDST</ExtLink>
           </div>
           <div>
