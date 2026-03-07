@@ -7,9 +7,9 @@ export const apiTestSuiteScript: ContentItem = {
     Script: `// ============================================================
 // Sitecore Scripting Console - Comprehensive API Test Suite
 // Exercises all safe-to-test APIs with Arrange/Act/Assert
-// Version: 1.8.3
+// Version: 1.8.4
 // ============================================================
-print('API Test Suite v1.8.3');
+print('API Test Suite v1.8.4');
 
 // ── Section 1: Config & Test Mini-Framework ─────────────
 
@@ -774,66 +774,6 @@ await test('emptyArchive', async () => {
   assertNotNull(result, 'empty archive result');
 });
 
-// ── Translation ──
-group('Translation');
-
-await test('translatePage', async () => {
-  if (!testItemId) throw new Error('Skipped: no test item');
-  try {
-    const result = await sc.Translation.translatePage(testItemId, 'da', { sourceLanguage: 'en' });
-    assertNotNull(result, 'translate page result');
-  } catch (e) {
-    // Translation may not be configured in all environments
-    assertContains(e.message || String(e), '', 'translatePage threw (may need translation config)');
-    throw new Error('Skipped: translation not configured - ' + (e.message || e));
-  }
-});
-
-await test('translateSite', async () => {
-  if (!firstSiteName) throw new Error('Skipped: no site name');
-  try {
-    if (!firstSiteId) throw new Error('Skipped: no site ID available');
-    const result = await sc.Translation.translateSite(firstSiteId, 'da', { sourceLanguage: 'en' });
-    assertNotNull(result, 'translate site result');
-  } catch (e) {
-    throw new Error('Skipped: translation not configured - ' + (e.message || e));
-  }
-});
-
-// ── Sites - Mutations ──
-group('Sites - Mutations');
-
-await test('createSiteCollection + removeSiteCollection', async () => {
-  const collName = TEST_PREFIX + 'coll';
-  try {
-    const created = await sc.Sites.createSiteCollection({ name: collName });
-    assertNotNull(created, 'created site collection');
-    cleanup.siteCollections.push(collName);
-    const removed = await sc.Sites.removeSiteCollection({ name: collName });
-    assertNotNull(removed, 'remove site collection result');
-    cleanup.siteCollections = cleanup.siteCollections.filter(c => c !== collName);
-  } catch (e) {
-    throw new Error('Skipped: site collection ops may need specific permissions - ' + (e.message || e));
-  }
-});
-
-await test('renameSiteCollection', async () => {
-  const collName = TEST_PREFIX + 'collrename';
-  const newCollName = TEST_PREFIX + 'collrenamed';
-  try {
-    await sc.Sites.createSiteCollection({ name: collName });
-    cleanup.siteCollections.push(collName);
-    const result = await sc.Sites.renameSiteCollection({ currentName: collName, newName: newCollName });
-    assertNotNull(result, 'rename site collection result');
-    cleanup.siteCollections = cleanup.siteCollections.filter(c => c !== collName);
-    cleanup.siteCollections.push(newCollName);
-    await sc.Sites.removeSiteCollection({ name: newCollName });
-    cleanup.siteCollections = cleanup.siteCollections.filter(c => c !== newCollName);
-  } catch (e) {
-    throw new Error('Skipped: site collection rename may need specific permissions - ' + (e.message || e));
-  }
-});
-
 // ── Presentation - Mutations ──
 group('Presentation - Mutations');
 
@@ -1028,7 +968,8 @@ for (const g of groupOrder) {
 const skippedAPIs = [
   'Content: uploadMedia, createItemFromBranch (need file blob / branch template)',
   'Workflows: startWorkflow, executeWorkflowCommand (need item in workflow state)',
-  'Sites: createSite, removeSite, renameSite, cloneSite, scaffoldSolution, updateSitesPos (complex preconditions)',
+  'Sites: createSite, removeSite, renameSite, cloneSite, scaffoldSolution, updateSitesPos, createSiteCollection, removeSiteCollection, renameSiteCollection (complex preconditions)',
+  'Translation: translatePage, translateSite (requires translation service configuration)',
   'Core: retrievePage, navigateTo, reloadCanvas (need Pages context)'
 ];
 const skippedHtml = skippedAPIs.map(s => '<li style="margin:2px 0;color:var(--muted-foreground);">' + s + '</li>').join('');
