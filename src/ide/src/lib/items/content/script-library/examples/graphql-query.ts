@@ -1,9 +1,9 @@
-import type { ItemDefinition } from "../../constants";
-import { TEMPLATE_IDS } from "../../constants";
+import type { ContentItem } from "../../../constants";
+import { TEMPLATE_IDS } from "../../../constants";
 
-export const graphqlQueryScript: ItemDefinition = {
+export const graphqlQueryScript: ContentItem = {
   name: "GraphQL Query",
-  templateId: TEMPLATE_IDS.jsScript,
+  template: TEMPLATE_IDS.jsScript,
   fields: {
     Script: `// Query content tree via GraphQL
 const result = await Sitecore.graphql(\`

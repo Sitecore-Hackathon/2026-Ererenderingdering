@@ -1,9 +1,9 @@
-import type { ItemDefinition } from "../../constants";
-import { TEMPLATE_IDS } from "../../constants";
+import type { ContentItem } from "../../../constants";
+import { TEMPLATE_IDS } from "../../../constants";
 
-export const renderHtmlScript: ItemDefinition = {
+export const renderHtmlScript: ContentItem = {
   name: "Render HTML",
-  templateId: TEMPLATE_IDS.jsScript,
+  template: TEMPLATE_IDS.jsScript,
   fields: {
     Script: `// Render custom HTML in the Results tab
 const ctx = await Sitecore.getContext();

@@ -1,7 +1,9 @@
-import type { ItemDefinition } from "../constants";
-import { SITECORE_TEMPLATE_ID } from "../constants";
+import type { TemplateItem } from "../constants";
+import { TEMPLATES_ROOT_PATH, TEMPLATE_IDS } from "../constants";
 
-export const jsScriptLibraryTemplate: ItemDefinition = {
+export const jsScriptLibraryTemplate: TemplateItem = {
+  parent: TEMPLATES_ROOT_PATH,
   name: "JS Script Library",
-  templateId: SITECORE_TEMPLATE_ID,
+  id: TEMPLATE_IDS.jsScriptLibrary,
+  fields: [],
 };

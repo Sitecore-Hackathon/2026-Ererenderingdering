@@ -17,9 +17,25 @@ export const TEMPLATE_IDS = {
   jsScript: "{5C2A8D4E-6B3F-4E1A-9D7C-8F2E4A6B1D3C}",
 };
 
-export interface ItemDefinition {
+export interface TemplateFieldDef {
+  section: string;
   name: string;
-  templateId: string;
-  fields?: Record<string, string>;
-  children?: ItemDefinition[];
+  type: string;
+}
+
+export interface TemplateItem {
+  parent: string;
+  name: string;
+  id: string;
+  icon?: string;
+  fields: TemplateFieldDef[];
+}
+
+export interface ContentItem {
+  parent?: string;
+  name: string;
+  template: string;
+  icon?: string;
+  fields: Record<string, string>;
+  children?: ContentItem[];
 }

@@ -3,9 +3,12 @@ import {
   MODULE_VERSION,
   MODULE_ROOT_PATH,
   TEMPLATES_ROOT_PATH,
+  SITECORE_TEMPLATE_ID,
+  SITECORE_TEMPLATE_SECTION_ID,
+  SITECORE_TEMPLATE_FIELD_ID,
   TEMPLATE_DEFINITIONS,
   MODULE_DEFINITION,
-  type ItemDefinition,
+  type ContentItem,
 } from "./items";
 
 export interface InstallResult {
@@ -14,18 +17,13 @@ export interface InstallResult {
   storageMode: "sitecore" | "local";
 }
 
-async function ensureParentPath(helpers: SitecoreHelpers, path: string): Promise<string | null> {
-  const item = await helpers.getItem(path);
-  return item?.itemId ?? null;
-}
-
-async function createTreeRecursive(
+async function createContentRecursive(
   helpers: SitecoreHelpers,
   parentPath: string,
   parentId: string,
-  definition: ItemDefinition
+  item: ContentItem
 ): Promise<void> {
-  const itemPath = `${parentPath}/${definition.name}`;
+  const itemPath = `${parentPath}/${item.name}`;
   let itemId: string | null = null;
 
   // Check if item already exists
@@ -33,25 +31,27 @@ async function createTreeRecursive(
   if (existing) {
     itemId = existing.itemId;
     // Update fields if they differ
-    if (definition.fields && itemId) {
+    const fieldEntries = Object.entries(item.fields);
+    if (fieldEntries.length > 0 && itemId) {
       const existingFields: Record<string, string> = {};
       for (const f of existing.fields?.nodes ?? []) {
         existingFields[f.name] = f.value;
       }
-      const needsUpdate = Object.entries(definition.fields).some(
+      const needsUpdate = fieldEntries.some(
         ([k, v]) => existingFields[k] !== v
       );
       if (needsUpdate) {
-        await helpers.updateItem(itemId, definition.fields);
+        await helpers.updateItem(itemId, item.fields);
       }
     }
   } else {
     // Create the item
+    const fieldEntries = Object.entries(item.fields);
     const created = await helpers.createItem(
       parentId,
-      definition.templateId,
-      definition.name,
-      definition.fields
+      item.template,
+      item.name,
+      fieldEntries.length > 0 ? item.fields : undefined
     );
     itemId = created?.itemId ?? null;
   }
@@ -59,65 +59,133 @@ async function createTreeRecursive(
   if (!itemId) return;
 
   // Recurse into children
-  if (definition.children) {
-    for (const child of definition.children) {
-      await createTreeRecursive(helpers, itemPath, itemId, child);
+  if (item.children) {
+    for (const child of item.children) {
+      await createContentRecursive(helpers, itemPath, itemId, child);
     }
   }
+}
+
+async function ensurePathExists(
+  helpers: SitecoreHelpers,
+  path: string,
+  parentPath: string,
+  name: string
+): Promise<any> {
+  let item = await helpers.getItem(path);
+  if (!item) {
+    const parent = await helpers.getItem(parentPath);
+    if (!parent) throw new Error(`Cannot find ${parentPath}`);
+    item = await helpers.createItem(
+      parent.itemId,
+      SITECORE_TEMPLATE_SECTION_ID,
+      name
+    );
+  }
+  return item;
 }
 
 async function installTemplates(helpers: SitecoreHelpers): Promise<void> {
   // Ensure templates root folder exists: /sitecore/templates/Modules/JavaScript Extensions
-  let templatesRoot = await helpers.getItem(TEMPLATES_ROOT_PATH);
-  if (!templatesRoot) {
-    // Ensure /sitecore/templates/Modules exists
-    const modulesPath = "/sitecore/templates/Modules";
-    let modules = await helpers.getItem(modulesPath);
-    if (!modules) {
-      const templatesFolder = await helpers.getItem("/sitecore/templates");
-      if (!templatesFolder) throw new Error("Cannot find /sitecore/templates");
-      const created = await helpers.createItem(
-        templatesFolder.itemId,
-        "{E269FBB5-3750-427A-9149-7AA950B49301}",
-        "Modules"
-      );
-      modules = created;
-    }
-    // Create "JavaScript Extensions" folder
-    const created = await helpers.createItem(
-      modules.itemId,
-      "{E269FBB5-3750-427A-9149-7AA950B49301}",
-      "JavaScript Extensions"
-    );
-    templatesRoot = created;
-  }
+  await ensurePathExists(
+    helpers,
+    "/sitecore/templates/Modules",
+    "/sitecore/templates",
+    "Modules"
+  );
+  const templatesRoot = await ensurePathExists(
+    helpers,
+    TEMPLATES_ROOT_PATH,
+    "/sitecore/templates/Modules",
+    "JavaScript Extensions"
+  );
 
   if (!templatesRoot?.itemId) throw new Error("Failed to create templates root");
 
-  // Create each template definition
+  // Create each template from its definition
   for (const tmpl of TEMPLATE_DEFINITIONS) {
-    await createTreeRecursive(helpers, TEMPLATES_ROOT_PATH, templatesRoot.itemId, tmpl);
+    const tmplPath = `${tmpl.parent}/${tmpl.name}`;
+    let tmplItemId: string;
+
+    const existing = await helpers.getItem(tmplPath);
+    if (existing) {
+      tmplItemId = existing.itemId;
+    } else {
+      const parentItem = await helpers.getItem(tmpl.parent);
+      if (!parentItem) throw new Error(`Parent not found: ${tmpl.parent}`);
+      const created = await helpers.createItem(
+        parentItem.itemId,
+        SITECORE_TEMPLATE_ID,
+        tmpl.name
+      );
+      tmplItemId = created.itemId;
+    }
+
+    // Group field definitions by section, then create section + field children
+    const sections = new Map<string, { name: string; type: string }[]>();
+    for (const field of tmpl.fields) {
+      const group = sections.get(field.section) ?? [];
+      group.push({ name: field.name, type: field.type });
+      sections.set(field.section, group);
+    }
+
+    for (const [sectionName, fields] of sections) {
+      const sectionPath = `${tmplPath}/${sectionName}`;
+      let sectionItem = await helpers.getItem(sectionPath);
+      let sectionId: string;
+
+      if (sectionItem) {
+        sectionId = sectionItem.itemId;
+      } else {
+        const created = await helpers.createItem(
+          tmplItemId,
+          SITECORE_TEMPLATE_SECTION_ID,
+          sectionName
+        );
+        sectionId = created.itemId;
+      }
+
+      for (const field of fields) {
+        const fieldPath = `${sectionPath}/${field.name}`;
+        const fieldItem = await helpers.getItem(fieldPath);
+        if (!fieldItem) {
+          await helpers.createItem(
+            sectionId,
+            SITECORE_TEMPLATE_FIELD_ID,
+            field.name,
+            { Type: field.type }
+          );
+        }
+      }
+    }
   }
 }
 
 async function installContent(helpers: SitecoreHelpers): Promise<void> {
-  // Ensure /sitecore/system/Modules exists
-  const systemModulesPath = "/sitecore/system/Modules";
-  let systemModules = await helpers.getItem(systemModulesPath);
-  if (!systemModules) {
-    const system = await helpers.getItem("/sitecore/system");
-    if (!system) throw new Error("Cannot find /sitecore/system");
-    const created = await helpers.createItem(
-      system.itemId,
-      "{E269FBB5-3750-427A-9149-7AA950B49301}",
-      "Modules"
-    );
-    systemModules = created;
+  if (!MODULE_DEFINITION.parent) {
+    throw new Error("Root content item must have a parent path");
   }
+
+  // Ensure parent exists (e.g. /sitecore/system/Modules)
+  const parentSegments = MODULE_DEFINITION.parent.split("/");
+  const parentName = parentSegments.pop()!;
+  const grandParentPath = parentSegments.join("/");
+
+  const systemModules = await ensurePathExists(
+    helpers,
+    MODULE_DEFINITION.parent,
+    grandParentPath,
+    parentName
+  );
 
   if (!systemModules?.itemId) throw new Error("Failed to find/create system Modules");
 
-  await createTreeRecursive(helpers, systemModulesPath, systemModules.itemId, MODULE_DEFINITION);
+  await createContentRecursive(
+    helpers,
+    MODULE_DEFINITION.parent,
+    systemModules.itemId,
+    MODULE_DEFINITION
+  );
 }
 
 function compareVersions(a: string, b: string): number {

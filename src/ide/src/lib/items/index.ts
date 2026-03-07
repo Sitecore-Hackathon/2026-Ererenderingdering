@@ -9,7 +9,9 @@ export {
   SITECORE_TEMPLATE_SECTION_ID,
   SITECORE_TEMPLATE_FIELD_ID,
   TEMPLATE_IDS,
-  type ItemDefinition,
+  type TemplateFieldDef,
+  type TemplateItem,
+  type ContentItem,
 } from "./constants";
 export { TEMPLATE_DEFINITIONS } from "./templates";
 export { MODULE_DEFINITION } from "./content";
