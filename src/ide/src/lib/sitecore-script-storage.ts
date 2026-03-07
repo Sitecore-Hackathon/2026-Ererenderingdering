@@ -9,7 +9,7 @@ function itemToScript(item: any): SavedScript {
   const scriptField = item.fields?.nodes?.find((f: any) => f.name === "Script");
   return {
     id: item.itemId,
-    name: item.name,
+    name: item.displayName || item.name,
     code: scriptField?.value ?? "",
     lastModified: Date.now(),
   };
@@ -45,6 +45,7 @@ export function createSitecoreScriptStorage(helpers: SitecoreHelpers, jsScriptTe
         nodes.push({
           id: child.itemId,
           name: child.name,
+          displayName: child.displayName || undefined,
           type: "script",
           code: child.fields?.nodes?.find((f: any) => f.name === "Script")?.value ?? "",
           path: childPath,
@@ -54,6 +55,7 @@ export function createSitecoreScriptStorage(helpers: SitecoreHelpers, jsScriptTe
         nodes.push({
           id: child.itemId,
           name: child.name,
+          displayName: child.displayName || undefined,
           type: "folder",
           children: subNodes,
           path: childPath,

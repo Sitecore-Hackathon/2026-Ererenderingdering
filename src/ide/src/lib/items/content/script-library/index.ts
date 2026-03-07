@@ -1,6 +1,7 @@
 import type { ContentItem } from "../../constants";
 import { ICONS } from "../../constants";
 import { examplesFolder } from "./examples";
+import { testsFolder } from "./tests";
 import { userScriptsFolder } from "./user-scripts";
 
 export const scriptLibraryFolder: ContentItem = {
@@ -8,5 +9,5 @@ export const scriptLibraryFolder: ContentItem = {
   template: "jsScriptLibrary",
   icon: ICONS.jsScriptLibrary,
   fields: {},
-  children: [examplesFolder, userScriptsFolder],
+  children: [examplesFolder, testsFolder, userScriptsFolder],
 };

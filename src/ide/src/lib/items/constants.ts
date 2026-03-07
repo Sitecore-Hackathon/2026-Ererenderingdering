@@ -1,9 +1,10 @@
-export const MODULE_VERSION = "1.8.5";
+export const MODULE_VERSION = "1.9.7";
 export const MODULE_ROOT_PATH = "/sitecore/system/Modules/JavaScript Extensions";
 export const TEMPLATES_ROOT_PATH = "/sitecore/templates/Modules/JavaScript Extensions";
 export const SCRIPT_LIBRARY_PATH = MODULE_ROOT_PATH + "/Script Library";
 export const USER_SCRIPTS_PATH = SCRIPT_LIBRARY_PATH + "/User Scripts";
 export const EXAMPLES_PATH = SCRIPT_LIBRARY_PATH + "/Examples";
+export const TESTS_PATH = SCRIPT_LIBRARY_PATH + "/Tests";
 
 // Template paths (under TEMPLATES_ROOT_PATH)
 export const TEMPLATE_PATHS = {

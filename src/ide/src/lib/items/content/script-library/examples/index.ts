@@ -5,15 +5,12 @@ import { listSitesScript } from "./list-sites";
 import { graphqlQueryScript } from "./graphql-query";
 import { renderHtmlScript } from "./render-html";
 import { getItemScript } from "./get-item";
-import { apiTestSuiteScript } from "./api-test-suite";
-
 const allExamples = [
   getContextScript,
   listSitesScript,
   graphqlQueryScript,
   renderHtmlScript,
   getItemScript,
-  apiTestSuiteScript,
 ];
 
 export const examplesFolder: ContentItem = {

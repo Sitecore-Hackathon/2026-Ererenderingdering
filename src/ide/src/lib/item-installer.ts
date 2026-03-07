@@ -1,14 +1,19 @@
 import type { SitecoreHelpers } from "./sitecore-helpers";
+import type { ContentItem } from "./items";
 import {
   MODULE_VERSION,
   MODULE_ROOT_PATH,
   SCRIPT_LIBRARY_PATH,
   USER_SCRIPTS_PATH,
+  EXAMPLES_PATH,
+  TESTS_PATH,
   TEMPLATES_ROOT_PATH,
   ICONS,
   TEMPLATE_DEFINITIONS,
-  EXAMPLE_SCRIPTS,
 } from "./items";
+import { scriptLibraryFolder } from "./items/content/script-library";
+import { examplesFolder } from "./items/content/script-library/examples";
+import { testsFolder } from "./items/content/script-library/tests";
 
 export interface InstallResult {
   installed: boolean;
@@ -100,11 +105,27 @@ async function installTemplates(helpers: SitecoreHelpers): Promise<ResolvedTempl
   return ids as ResolvedTemplateIds;
 }
 
-async function deleteExamples(helpers: SitecoreHelpers): Promise<void> {
-  const examples = await helpers.getItem(SCRIPT_LIBRARY_PATH + "/Examples");
-  if (examples?.itemId) {
-    console.log("[JSE] Deleting Examples folder for reinstall");
-    await helpers.deleteItem(examples.itemId);
+/** Delete only managed subfolders (Examples, Tests) — preserves User Scripts */
+async function deleteManagedFolders(helpers: SitecoreHelpers): Promise<void> {
+  const managedPaths = [EXAMPLES_PATH, TESTS_PATH];
+  for (const path of managedPaths) {
+    const item = await helpers.getItem(path);
+    if (item?.itemId) {
+      console.log(`[JSE] Deleting managed folder: ${path} (${item.itemId})`);
+      try {
+        await withRetry(() => helpers.deleteItem(item.itemId), `delete ${path}`);
+      } catch (err) {
+        console.error(`[JSE] Failed to delete ${path}, skipping reinstall of this folder`);
+        throw err;
+      }
+      // Verify deletion
+      const check = await helpers.getItem(path);
+      if (check?.itemId) {
+        console.error(`[JSE] Folder ${path} still exists after delete, aborting upgrade for this folder`);
+        throw new Error(`Failed to delete ${path}`);
+      }
+      console.log(`[JSE] Successfully deleted: ${path}`);
+    }
   }
 }
 
@@ -134,65 +155,74 @@ async function installModuleRoot(helpers: SitecoreHelpers, templateIds: Resolved
   return moduleRoot.itemId;
 }
 
+const RETRY_DELAYS = [500, 1500, 3000];
+
+async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (attempt < RETRY_DELAYS.length) {
+        const delay = RETRY_DELAYS[attempt];
+        console.warn(`[JSE] "${label}" failed: ${msg}. Retrying in ${delay}ms (attempt ${attempt + 1}/${RETRY_DELAYS.length})...`);
+        await new Promise((r) => setTimeout(r, delay));
+      } else {
+        console.error(`[JSE] "${label}" failed after ${RETRY_DELAYS.length} retries: ${msg}`);
+        throw err;
+      }
+    }
+  }
+}
+
+async function installContentTree(
+  helpers: SitecoreHelpers,
+  parentId: string,
+  item: ContentItem,
+  templateIds: ResolvedTemplateIds
+): Promise<void> {
+  const templateId = templateIds[item.template as keyof ResolvedTemplateIds];
+  if (!templateId) {
+    console.warn(`[JSE] Unknown template "${item.template}" for item "${item.name}", skipping`);
+    return;
+  }
+
+  const fields: Record<string, string> = { ...item.fields };
+  if (item.icon) fields.__Icon = item.icon;
+
+  console.log(`[JSE] Creating item: ${item.name} (template=${item.template})`);
+  let created;
+  try {
+    created = await withRetry(
+      () => helpers.createItem(parentId, templateId, item.name, fields),
+      item.name
+    );
+  } catch (err) {
+    console.error(`[JSE] Error creating item "${item.name}":`, err);
+    return;
+  }
+  if (!created?.itemId) {
+    console.warn(`[JSE] Failed to create item: ${item.name}`);
+    return;
+  }
+
+  if (item.children) {
+    for (const child of item.children) {
+      try {
+        await installContentTree(helpers, created.itemId, child, templateIds);
+      } catch (err) {
+        console.error(`[JSE] Error installing child "${child.name}" under "${item.name}":`, err);
+      }
+    }
+  }
+}
+
 async function installScriptLibrary(
   helpers: SitecoreHelpers,
   moduleRootId: string,
   templateIds: ResolvedTemplateIds
 ): Promise<void> {
-  console.log("[JSE] Creating Script Library");
-  const scriptLib = await helpers.createItem(
-    moduleRootId,
-    templateIds.jsScriptLibrary,
-    "Script Library",
-    { __Icon: ICONS.jsScriptLibrary }
-  );
-  if (!scriptLib?.itemId) throw new Error("Failed to create Script Library");
-
-  console.log("[JSE] Creating Examples folder");
-  const examples = await helpers.createItem(
-    scriptLib.itemId,
-    templateIds.jsScriptLibrary,
-    "Examples",
-    { __Icon: ICONS.jsScriptLibrary }
-  );
-  if (!examples?.itemId) throw new Error("Failed to create Examples folder");
-
-  for (const [name, code] of Object.entries(EXAMPLE_SCRIPTS)) {
-    console.log(`[JSE] Creating example script: ${name}`);
-    await helpers.createItem(
-      examples.itemId,
-      templateIds.jsScript,
-      name,
-      { Script: code }
-    );
-  }
-}
-
-async function installExamples(
-  helpers: SitecoreHelpers,
-  templateIds: ResolvedTemplateIds
-): Promise<void> {
-  const scriptLib = await helpers.getItem(SCRIPT_LIBRARY_PATH);
-  if (!scriptLib?.itemId) throw new Error("Script Library not found for upgrade");
-
-  console.log("[JSE] Creating Examples folder");
-  const examples = await helpers.createItem(
-    scriptLib.itemId,
-    templateIds.jsScriptLibrary,
-    "Examples",
-    { __Icon: ICONS.jsScriptLibrary }
-  );
-  if (!examples?.itemId) throw new Error("Failed to create Examples folder");
-
-  for (const [name, code] of Object.entries(EXAMPLE_SCRIPTS)) {
-    console.log(`[JSE] Creating example script: ${name}`);
-    await helpers.createItem(
-      examples.itemId,
-      templateIds.jsScript,
-      name,
-      { Script: code }
-    );
-  }
+  await installContentTree(helpers, moduleRootId, scriptLibraryFolder, templateIds);
 }
 
 async function ensureUserScripts(
@@ -249,10 +279,26 @@ export async function installModule(helpers: SitecoreHelpers): Promise<InstallRe
     console.log("[JSE] Installed version:", installedVersion, "Current:", MODULE_VERSION);
 
     if (compareVersions(MODULE_VERSION, installedVersion) > 0) {
-      console.log("[JSE] Upgrading module");
-      await deleteExamples(helpers);
-      await installExamples(helpers, templateIds);
-      await ensureUserScripts(helpers, existing.itemId, templateIds);
+      console.log("[JSE] Upgrading module from", installedVersion, "to", MODULE_VERSION);
+
+      // Ensure Script Library folder exists
+      let scriptLib = await helpers.getItem(SCRIPT_LIBRARY_PATH);
+      if (!scriptLib?.itemId) {
+        console.log("[JSE] Script Library missing, recreating full tree");
+        await installScriptLibrary(helpers, existing.itemId, templateIds);
+        await ensureUserScripts(helpers, existing.itemId, templateIds);
+      } else {
+        // Only delete and reinstall managed folders (Examples, Tests)
+        // User Scripts folder is preserved
+        console.log("[JSE] Deleting managed folders for upgrade...");
+        await deleteManagedFolders(helpers);
+        console.log("[JSE] Reinstalling Examples folder...");
+        await installContentTree(helpers, scriptLib.itemId, examplesFolder, templateIds);
+        console.log("[JSE] Reinstalling Tests folder...");
+        await installContentTree(helpers, scriptLib.itemId, testsFolder, templateIds);
+        await ensureUserScripts(helpers, existing.itemId, templateIds);
+      }
+
       await helpers.updateItem(existing.itemId, { Version: MODULE_VERSION });
       console.log("[JSE] Upgrade complete");
     } else {

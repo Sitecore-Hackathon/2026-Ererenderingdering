@@ -103,7 +103,7 @@ function TreeNode({
         ) : (
           <FileCode2 className="h-4 w-4 shrink-0 text-blue-500" />
         )}
-        <span className="text-sm truncate flex-1">{node.name}</span>
+        <span className="text-sm truncate flex-1">{node.displayName || node.name}</span>
         {mode === "save" && isSelected && (
           <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
         )}
@@ -253,7 +253,7 @@ export function ScriptLibraryDialog({
     if (!selectedNode || selectedNode.type !== "script") return;
     onLoad?.({
       id: selectedNode.id,
-      name: selectedNode.name,
+      name: selectedNode.displayName || selectedNode.name,
       code: selectedNode.code ?? "",
       lastModified: Date.now(),
       path: selectedNode.path,
@@ -273,7 +273,7 @@ export function ScriptLibraryDialog({
     if (node.type !== "script") return;
     onLoad?.({
       id: node.id,
-      name: node.name,
+      name: node.displayName || node.name,
       code: node.code ?? "",
       lastModified: Date.now(),
       path: node.path,

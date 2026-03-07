@@ -5,7 +5,7 @@ export function getItemChildren({ gql }: HelperContext) {
     const data = await gql(`
       query GetItemChildren($where: ItemQueryInput) {
         item(where: $where) {
-          children { nodes { itemId name path fields(ownFields: true, excludeStandardFields: true) { nodes { name value } } } }
+          children { nodes { itemId name displayName path fields(ownFields: true, excludeStandardFields: true) { nodes { name value } } } }
         }
       }
     `, { where: { path } });

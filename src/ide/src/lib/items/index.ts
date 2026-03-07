@@ -5,6 +5,7 @@ export {
   SCRIPT_LIBRARY_PATH,
   USER_SCRIPTS_PATH,
   EXAMPLES_PATH,
+  TESTS_PATH,
   TEMPLATE_PATHS,
   ICONS,
   type TemplateDef,
