@@ -7,9 +7,9 @@ export const apiTestSuiteScript: ContentItem = {
     Script: `// ============================================================
 // Sitecore Scripting Console - Comprehensive API Test Suite
 // Exercises all safe-to-test APIs with Arrange/Act/Assert
-// Version: 1.8.0
+// Version: 1.8.1
 // ============================================================
-print('API Test Suite v1.8.0');
+print('API Test Suite v1.8.1');
 
 // ── Section 1: Config & Test Mini-Framework ─────────────
 
@@ -29,6 +29,7 @@ let copyItemId = null;
 let testTemplateId = null;
 let testTemplateFolderId = null;
 let firstSiteName = null;
+let firstSiteId = null;
 let firstIndexName = null;
 let firstWorkflowId = null;
 let currentUserName = null;
@@ -286,6 +287,7 @@ await test('getSites', async () => {
   assertNotNull(sites, 'sites');
   if (sites && sites.length > 0 && !firstSiteName) {
     firstSiteName = sites[0].name || sites[0].siteName;
+    firstSiteId = sites[0].id || sites[0].siteId;
   }
 });
 
@@ -625,7 +627,7 @@ await test('publishItem', async () => {
     publishTestItemId = item.itemId;
     cleanup.items.push(item.itemId);
   }
-  const result = await sc.Publishing.publishItem({ itemId: publishTestItemId, publishingTargets: ['Internet'], languages: ['en'] });
+  const result = await sc.Publishing.publishItem({ rootItemId: publishTestItemId, languages: ['en'], targetDatabases: ['Internet'], publishItemMode: 'SMART' });
   assertNotNull(result, 'publish item result');
   if (result && (result.operationId || result.handle)) {
     publishOperationId = result.operationId || result.handle;
@@ -650,18 +652,18 @@ await test('cancelPublishing', async () => {
 
 await test('publishSite', async () => {
   if (!firstSiteName) throw new Error('Skipped: no site name');
-  const result = await sc.Publishing.publishSite({ siteName: firstSiteName, publishingTargets: ['Internet'], languages: ['en'], publishSubItems: false });
+  const result = await sc.Publishing.publishSite({ languages: ['en'], targetDatabases: ['Internet'], publishSiteMode: 'SMART' });
   assertNotNull(result, 'publish site result');
 });
 
 await test('publishWithOptions', async () => {
-  const result = await sc.Publishing.publishWithOptions([{ mode: 'smart', publishingTargets: ['Internet'], languages: ['en'] }]);
+  const result = await sc.Publishing.publishWithOptions([{ language: 'en', targetDatabase: 'Internet', publishSiteMode: 'SMART' }]);
   assertNotNull(result, 'publish with options result');
 });
 
 await test('publishLanguageSpecificItems', async () => {
   if (!publishTestItemId) throw new Error('Skipped: no publish test item');
-  const result = await sc.Publishing.publishLanguageSpecificItems({ itemIds: [publishTestItemId], publishingTargets: ['Internet'], languages: ['en'] });
+  const result = await sc.Publishing.publishLanguageSpecificItems({ itemsToPublish: [{ id: publishTestItemId, languages: ['en'] }], targetDatabases: ['Internet'], publishItemMode: 'SMART' });
   assertNotNull(result, 'publish language specific items result');
 });
 
@@ -669,7 +671,7 @@ await test('publishLanguageSpecificItems', async () => {
 group('Languages - Mutations');
 
 await test('addLanguage + deleteLanguage', async () => {
-  const result = await sc.Languages.addLanguage({ name: 'zu-ZA' });
+  const result = await sc.Languages.addLanguage({ languageCode: 'zu-ZA' });
   assertNotNull(result, 'add language result');
   cleanup.languages.push('zu-ZA');
   const langs = await sc.Languages.getLanguages();
@@ -681,8 +683,8 @@ await test('addLanguage + deleteLanguage', async () => {
 });
 
 await test('deleteLanguages (batch)', async () => {
-  await sc.Languages.addLanguage({ name: 'af-ZA' });
-  await sc.Languages.addLanguage({ name: 'sq-AL' });
+  await sc.Languages.addLanguage({ languageCode: 'af-ZA' });
+  await sc.Languages.addLanguage({ languageCode: 'sq-AL' });
   cleanup.languages.push('af-ZA', 'sq-AL');
   const result = await sc.Languages.deleteLanguages(['af-ZA', 'sq-AL']);
   assertNotNull(result, 'delete languages result');
@@ -768,7 +770,7 @@ group('Translation');
 await test('translatePage', async () => {
   if (!testItemId) throw new Error('Skipped: no test item');
   try {
-    const result = await sc.Translation.translatePage(testItemId, 'da');
+    const result = await sc.Translation.translatePage(testItemId, 'da', { sourceLanguage: 'en' });
     assertNotNull(result, 'translate page result');
   } catch (e) {
     // Translation may not be configured in all environments
@@ -780,7 +782,8 @@ await test('translatePage', async () => {
 await test('translateSite', async () => {
   if (!firstSiteName) throw new Error('Skipped: no site name');
   try {
-    const result = await sc.Translation.translateSite(firstSiteName, 'da');
+    if (!firstSiteId) throw new Error('Skipped: no site ID available');
+    const result = await sc.Translation.translateSite(firstSiteId, 'da', { sourceLanguage: 'en' });
     assertNotNull(result, 'translate site result');
   } catch (e) {
     throw new Error('Skipped: translation not configured - ' + (e.message || e));
@@ -972,7 +975,7 @@ for (const lang of cleanup.languages) {
 // Delete site collections
 for (const coll of cleanup.siteCollections) {
   try {
-    await sc.Sites.removeSiteCollection(coll);
+    await sc.Sites.removeSiteCollection({ name: coll });
     print('Cleaned up site collection: ' + coll);
   } catch (e) {
     const msg = 'Failed to remove site collection ' + coll + ': ' + (e.message || e);
