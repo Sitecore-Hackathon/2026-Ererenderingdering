@@ -8,13 +8,12 @@ Ererenderingdering
 Best Marketplace App for Sitecore AI - Build something publishable. Not just a demo.
 
 ## Description
-⟹ Write a clear description of your hackathon entry.  
 
-  - Module Purpose
-  - What problem was solved (if any)
-    - How does this module solve it
+We see that SitecoreAI is quickly moving to the future. We are not sure what will be with our favorite Sitecore tools, like Content Editor or Sitecore Powershell Extenstions. They rely on .Net Framework and the future for them is uncertain.
 
-_You can alternately paste a [link here](#docs) to a document within this repo containing the description._
+That is why I decided to take [Sitecore Powershell Extensions](https://doc.sitecorepowershell.com/) and reimagine it. How it would look if it was built with modern technologies, like React and TypeScript? How it would look if we write our scripts in JavaScript instead of PowerShell? And most importantly, how it would look if it was built as a SitecoreAI module and running in the cloud?
+
+Welcome to the "Sitecore JavaScript Extensions" - a SitecoreAI module that brings the power of scripting to Sitecore content authors and administrators. With this module, you can write and execute JavaScript code to automate tasks, manipulate content, and extend Sitecore functionality in any way you want.
 
 ## Video link
 ⟹ Provide a video highlighing your Hackathon module submission and provide a link to the video. You can use any video hosting, file share or even upload the video to this repository. _Just remember to update the link below_
@@ -23,13 +22,8 @@ _You can alternately paste a [link here](#docs) to a document within this repo c
 
 ## Pre-requisites and Dependencies
 
-⟹ Does your module rely on other Sitecore modules or frameworks?
-
-- List any dependencies
-- Or other modules that must be installed
-- Or services that must be enabled/configured
-
-_Remove this subsection if your entry does not have any prerequisites other than Sitecore_
+- SitecoreAI
+- Administrator access to SitecoreAI Cloud Portal for app registration and configuration
 
 ## Installation instructions
 
