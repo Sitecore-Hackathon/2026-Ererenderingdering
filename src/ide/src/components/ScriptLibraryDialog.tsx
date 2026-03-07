@@ -9,13 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
-import {
-  listScripts,
-  saveScript,
-  deleteScript,
-  type SavedScript,
-} from "@/src/lib/script-storage";
+import { Trash2, Loader2 } from "lucide-react";
+import type { SavedScript, ScriptStorageBackend } from "@/src/lib/script-storage";
 
 interface ScriptLibraryDialogProps {
   open: boolean;
@@ -24,6 +19,7 @@ interface ScriptLibraryDialogProps {
   currentCode?: string;
   onLoad?: (script: SavedScript) => void;
   onSaved?: (script: SavedScript) => void;
+  backend: ScriptStorageBackend;
 }
 
 export function ScriptLibraryDialog({
@@ -33,22 +29,33 @@ export function ScriptLibraryDialog({
   currentCode = "",
   onLoad,
   onSaved,
+  backend,
 }: ScriptLibraryDialogProps) {
   const [scripts, setScripts] = useState<SavedScript[]>([]);
   const [saveName, setSaveName] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setScripts(listScripts());
       setSaveName("");
       setSelectedId(null);
+      setLoading(true);
+      backend.listScripts().then((s) => {
+        setScripts(s);
+        setLoading(false);
+      }).catch(() => {
+        setScripts([]);
+        setLoading(false);
+      });
     }
-  }, [open]);
+  }, [open, backend]);
 
-  function handleSave() {
+  async function handleSave() {
     if (!saveName.trim()) return;
-    const script = saveScript(saveName.trim(), currentCode);
+    setLoading(true);
+    const script = await backend.saveScript(saveName.trim(), currentCode);
+    setLoading(false);
     onSaved?.(script);
     onOpenChange(false);
   }
@@ -61,9 +68,12 @@ export function ScriptLibraryDialog({
     }
   }
 
-  function handleDelete(id: string) {
-    deleteScript(id);
-    setScripts(listScripts());
+  async function handleDelete(id: string) {
+    setLoading(true);
+    await backend.deleteScript(id);
+    const updated = await backend.listScripts();
+    setScripts(updated);
+    setLoading(false);
     if (selectedId === id) setSelectedId(null);
   }
 
@@ -85,14 +95,20 @@ export function ScriptLibraryDialog({
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
               autoFocus
             />
-            <Button onClick={handleSave} disabled={!saveName.trim()}>
+            <Button onClick={handleSave} disabled={!saveName.trim() || loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
               Save
             </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             <div className="max-h-[300px] overflow-auto border rounded-md">
-              {scripts.length === 0 ? (
+              {loading ? (
+                <div className="p-4 flex items-center justify-center text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading scripts...
+                </div>
+              ) : scripts.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">
                   No saved scripts
                 </div>

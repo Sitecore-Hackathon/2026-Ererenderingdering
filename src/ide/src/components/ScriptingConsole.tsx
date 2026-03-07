@@ -5,6 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMarketplaceClient } from "@/src/utils/hooks/useMarketplaceClient";
 import { createSitecoreHelpers } from "@/src/lib/sitecore-helpers";
 import { runScript, type ConsoleEntry } from "@/src/lib/script-runner";
+import { createLocalScriptStorage, type ScriptStorageBackend } from "@/src/lib/script-storage";
+import { createSitecoreScriptStorage } from "@/src/lib/sitecore-script-storage";
+import { installModule } from "@/src/lib/item-installer";
 import { MonacoEditor, type MonacoEditorHandle } from "./MonacoEditor";
 import { Toolbar } from "./Toolbar";
 import { ConsoleOutput } from "./ConsoleOutput";
@@ -32,6 +35,10 @@ export function ScriptingConsole() {
   const [outputHeight, setOutputHeight] = useState(250);
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [storageBackend, setStorageBackend] = useState<ScriptStorageBackend>(
+    () => createLocalScriptStorage()
+  );
+  const [storageMode, setStorageMode] = useState<"sitecore" | "local">("local");
 
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
@@ -57,6 +64,27 @@ export function ScriptingConsole() {
     if (!client) return null;
     return createSitecoreHelpers(client);
   }, [client]);
+
+  // Install module and set up storage backend when helpers become available
+  useEffect(() => {
+    if (!helpers) return;
+    let cancelled = false;
+
+    (async () => {
+      const result = await installModule(helpers);
+      if (cancelled) return;
+
+      if (result.storageMode === "sitecore") {
+        setStorageBackend(createSitecoreScriptStorage(helpers));
+        setStorageMode("sitecore");
+      } else {
+        setStorageBackend(createLocalScriptStorage());
+        setStorageMode("local");
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [helpers]);
 
   const handleRun = useCallback(async () => {
     if (!helpers || !editorRef.current) return;
@@ -126,6 +154,7 @@ export function ScriptingConsole() {
         onClear={handleClear}
         isRunning={isRunning}
         isClientReady={isInitialized && !!client}
+        storageMode={storageMode}
       />
 
       <div className="flex-1 min-h-0">
@@ -174,6 +203,7 @@ export function ScriptingConsole() {
         mode={dialogMode}
         currentCode={editorRef.current?.getValue() ?? ""}
         onLoad={(script) => editorRef.current?.setValue(script.code)}
+        backend={storageBackend}
       />
     </div>
   );

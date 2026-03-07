@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { ConsoleEntry } from "@/src/lib/script-runner";
 
 const levelColors: Record<ConsoleEntry["level"], string> = {
-  log: "text-foreground",
+  log: "text-[#d4d4d4]",
   info: "text-blue-400",
   warn: "text-yellow-400",
   error: "text-red-400",

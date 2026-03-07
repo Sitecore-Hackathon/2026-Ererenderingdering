@@ -7,6 +7,14 @@ export interface SavedScript {
   lastModified: number;
 }
 
+export interface ScriptStorageBackend {
+  listScripts(): Promise<SavedScript[]>;
+  saveScript(name: string, code: string): Promise<SavedScript>;
+  loadScript(id: string): Promise<SavedScript | undefined>;
+  updateScript(id: string, updates: Partial<Pick<SavedScript, "name" | "code">>): Promise<SavedScript | undefined>;
+  deleteScript(id: string): Promise<boolean>;
+}
+
 const DEFAULT_SCRIPTS: SavedScript[] = [
   {
     id: "example-get-context",
@@ -89,6 +97,51 @@ function saveScriptsToStorage(scripts: SavedScript[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(scripts));
 }
 
+export function createLocalScriptStorage(): ScriptStorageBackend {
+  return {
+    async listScripts() {
+      return getScriptsFromStorage().sort((a, b) => b.lastModified - a.lastModified);
+    },
+
+    async saveScript(name: string, code: string) {
+      const scripts = getScriptsFromStorage();
+      const script: SavedScript = {
+        id: `script-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        code,
+        lastModified: Date.now(),
+      };
+      scripts.push(script);
+      saveScriptsToStorage(scripts);
+      return script;
+    },
+
+    async loadScript(id: string) {
+      return getScriptsFromStorage().find((s) => s.id === id);
+    },
+
+    async updateScript(id: string, updates: Partial<Pick<SavedScript, "name" | "code">>) {
+      const scripts = getScriptsFromStorage();
+      const index = scripts.findIndex((s) => s.id === id);
+      if (index === -1) return undefined;
+      if (updates.name !== undefined) scripts[index].name = updates.name;
+      if (updates.code !== undefined) scripts[index].code = updates.code;
+      scripts[index].lastModified = Date.now();
+      saveScriptsToStorage(scripts);
+      return scripts[index];
+    },
+
+    async deleteScript(id: string) {
+      const scripts = getScriptsFromStorage();
+      const filtered = scripts.filter((s) => s.id !== id);
+      if (filtered.length === scripts.length) return false;
+      saveScriptsToStorage(filtered);
+      return true;
+    },
+  };
+}
+
+// Legacy sync exports for backward compat (used nowhere now but kept just in case)
 export function listScripts(): SavedScript[] {
   return getScriptsFromStorage().sort((a, b) => b.lastModified - a.lastModified);
 }

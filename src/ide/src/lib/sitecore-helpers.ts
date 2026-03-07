@@ -8,7 +8,10 @@ export interface SitecoreHelpers {
   reloadCanvas: () => Promise<void>;
   navigateTo: (itemId: string) => Promise<void>;
   getItem: (path: string) => Promise<any>;
+  getItemChildren: (path: string) => Promise<any[]>;
   updateItem: (id: string, path: string, fields: Record<string, string>) => Promise<any>;
+  createItem: (parentId: string, name: string, templateId: string, fields?: Record<string, string>) => Promise<any>;
+  deleteItem: (id: string) => Promise<boolean>;
 }
 
 function unwrap(res: any): any {
@@ -94,6 +97,35 @@ export function createSitecoreHelpers(client: ClientSDK): SitecoreHelpers {
       });
     },
 
+    async getItemChildren(path: string) {
+      const sitecoreContextId = await getSitecoreContextId();
+      const res = await client.mutate("xmc.authoring.graphql", {
+        params: {
+          query: { sitecoreContextId },
+          body: {
+            query: `
+              query GetItemChildren($path: String!) {
+                item(where: { database: "master", path: $path }) {
+                  children {
+                    nodes {
+                      itemId
+                      name
+                      path
+                      fields(ownFields: true, excludeStandardFields: true) {
+                        nodes { name value }
+                      }
+                    }
+                  }
+                }
+              }
+            `,
+            variables: { path },
+          },
+        },
+      });
+      return (res as any).data?.data?.item?.children?.nodes ?? [];
+    },
+
     async getItem(path: string) {
       const sitecoreContextId = await getSitecoreContextId();
       const res = await client.mutate("xmc.authoring.graphql", {
@@ -124,6 +156,65 @@ export function createSitecoreHelpers(client: ClientSDK): SitecoreHelpers {
         },
       });
       return (res as any).data?.data?.item;
+    },
+
+    async createItem(parentId: string, name: string, templateId: string, fields?: Record<string, string>) {
+      const fieldInputs = fields
+        ? Object.entries(fields).map(([n, value]) => ({ name: n, value }))
+        : [];
+      const sitecoreContextId = await getSitecoreContextId();
+      const res = await client.mutate("xmc.authoring.graphql", {
+        params: {
+          query: { sitecoreContextId },
+          body: {
+            query: `
+              mutation CreateItem($parentId: ID!, $name: String!, $templateId: ID!, $fields: [FieldValueInput!]) {
+                createItem(
+                  input: {
+                    parentId: $parentId
+                    name: $name
+                    templateId: $templateId
+                    fields: $fields
+                    database: "master"
+                  }
+                ) {
+                  item {
+                    itemId
+                    name
+                    path
+                  }
+                }
+              }
+            `,
+            variables: { parentId: parentId, name, templateId, fields: fieldInputs.length > 0 ? fieldInputs : undefined },
+          },
+        },
+      });
+      return (res as any).data?.data?.createItem?.item;
+    },
+
+    async deleteItem(id: string) {
+      try {
+        const sitecoreContextId = await getSitecoreContextId();
+        await client.mutate("xmc.authoring.graphql", {
+          params: {
+            query: { sitecoreContextId },
+            body: {
+              query: `
+                mutation DeleteItem($itemId: ID!) {
+                  deleteItem(input: { itemId: $itemId, database: "master" }) {
+                    successful
+                  }
+                }
+              `,
+              variables: { itemId: id },
+            },
+          },
+        });
+        return true;
+      } catch {
+        return false;
+      }
     },
 
     async updateItem(id: string, path: string, fields: Record<string, string>) {
