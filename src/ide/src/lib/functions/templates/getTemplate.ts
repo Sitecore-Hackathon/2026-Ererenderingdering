@@ -1,10 +1,10 @@
 import type { HelperContext } from "../_shared";
-import { isId } from "../_shared";
+import { isId, stripBraces } from "../_shared";
 
 export function getTemplate({ gql }: HelperContext) {
   return async (idOrPath: string, opts?: { database?: string }) => {
     const where: any = {};
-    if (isId(idOrPath)) where.templateId = idOrPath; else where.path = idOrPath;
+    if (isId(idOrPath)) where.templateId = stripBraces(idOrPath); else where.path = idOrPath;
     if (opts?.database) where.database = opts.database;
     const data = await gql(`
       query GetTemplate($where: ItemTemplateQueryInput) {

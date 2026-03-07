@@ -208,7 +208,7 @@ export function createSitecoreHelpers(client: ClientSDK): SitecoreHelpers {
       },
     });
     const data = unwrap(res);
-    if (data?.data?.errors) throw new Error(JSON.stringify(data.data.errors));
+    if (data?.errors) throw new Error(JSON.stringify(data.errors));
     return data?.data;
   }
 

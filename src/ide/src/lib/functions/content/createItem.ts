@@ -1,9 +1,10 @@
 import type { HelperContext } from "../_shared";
-import { fieldsToInput } from "../_shared";
+import { fieldsToInput, stripBraces, resolveParentId } from "../_shared";
 
 export function createItem({ gql }: HelperContext) {
   return async (parent: string, templateId: string, name: string, fields?: Record<string, string>, opts?: { language?: string; database?: string }) => {
-    const input: any = { parent, templateId, name, fields: fieldsToInput(fields) };
+    const parentId = await resolveParentId(gql, parent);
+    const input: any = { parent: parentId, templateId: stripBraces(templateId), name, fields: fieldsToInput(fields) };
     if (opts?.language) input.language = opts.language;
     if (opts?.database) input.database = opts.database;
     const data = await gql(`

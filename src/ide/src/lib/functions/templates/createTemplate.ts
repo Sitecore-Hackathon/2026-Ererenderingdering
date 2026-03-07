@@ -1,8 +1,10 @@
 import type { HelperContext } from "../_shared";
+import { resolveParentId } from "../_shared";
 
 export function createTemplate({ gql }: HelperContext) {
   return async (parent: string, name: string, opts?: { database?: string; language?: string; icon?: string; baseTemplates?: string[]; sections?: any[]; createStandardValuesItem?: boolean }) => {
-    const input: any = { parent, name };
+    const parentId = await resolveParentId(gql, parent);
+    const input: any = { parent: parentId, name };
     if (opts?.database) input.database = opts.database;
     if (opts?.language) input.language = opts.language;
     if (opts?.icon) input.icon = opts.icon;
