@@ -100,11 +100,11 @@ async function installTemplates(helpers: SitecoreHelpers): Promise<ResolvedTempl
   return ids as ResolvedTemplateIds;
 }
 
-async function deleteScriptLibrary(helpers: SitecoreHelpers): Promise<void> {
-  const scriptLib = await helpers.getItem(SCRIPT_LIBRARY_PATH);
-  if (scriptLib?.itemId) {
-    console.log("[JSE] Deleting Script Library for reinstall");
-    await helpers.deleteItem(scriptLib.itemId);
+async function deleteExamples(helpers: SitecoreHelpers): Promise<void> {
+  const examples = await helpers.getItem(SCRIPT_LIBRARY_PATH + "/Examples");
+  if (examples?.itemId) {
+    console.log("[JSE] Deleting Examples folder for reinstall");
+    await helpers.deleteItem(examples.itemId);
   }
 }
 
@@ -147,6 +147,33 @@ async function installScriptLibrary(
     { __Icon: ICONS.jsScriptLibrary }
   );
   if (!scriptLib?.itemId) throw new Error("Failed to create Script Library");
+
+  console.log("[JSE] Creating Examples folder");
+  const examples = await helpers.createItem(
+    scriptLib.itemId,
+    templateIds.jsScriptLibrary,
+    "Examples",
+    { __Icon: ICONS.jsScriptLibrary }
+  );
+  if (!examples?.itemId) throw new Error("Failed to create Examples folder");
+
+  for (const [name, code] of Object.entries(EXAMPLE_SCRIPTS)) {
+    console.log(`[JSE] Creating example script: ${name}`);
+    await helpers.createItem(
+      examples.itemId,
+      templateIds.jsScript,
+      name,
+      { Script: code }
+    );
+  }
+}
+
+async function installExamples(
+  helpers: SitecoreHelpers,
+  templateIds: ResolvedTemplateIds
+): Promise<void> {
+  const scriptLib = await helpers.getItem(SCRIPT_LIBRARY_PATH);
+  if (!scriptLib?.itemId) throw new Error("Script Library not found for upgrade");
 
   console.log("[JSE] Creating Examples folder");
   const examples = await helpers.createItem(
@@ -223,8 +250,8 @@ export async function installModule(helpers: SitecoreHelpers): Promise<InstallRe
 
     if (compareVersions(MODULE_VERSION, installedVersion) > 0) {
       console.log("[JSE] Upgrading module");
-      await deleteScriptLibrary(helpers);
-      await installScriptLibrary(helpers, existing.itemId, templateIds);
+      await deleteExamples(helpers);
+      await installExamples(helpers, templateIds);
       await ensureUserScripts(helpers, existing.itemId, templateIds);
       await helpers.updateItem(existing.itemId, { Version: MODULE_VERSION });
       console.log("[JSE] Upgrade complete");
