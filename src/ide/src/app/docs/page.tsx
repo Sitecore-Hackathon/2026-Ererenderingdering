@@ -3,8 +3,47 @@ import Link from "next/link";
 const docs = [
   {
     title: "Getting Started",
-    description: "Overview and quick start guide",
+    description: "Overview, UI layout, and quick start guide",
     href: "/docs/getting-started",
+  },
+  {
+    title: "Installation",
+    description: "Clone, build, run locally, and deploy to production",
+    href: "/docs/installation",
+  },
+  {
+    title: "Configuration",
+    description:
+      "App registration, extension points, permissions, and auto-installed items",
+    href: "/docs/configuration",
+  },
+  {
+    title: "Running Scripts",
+    description:
+      "Monaco editor, execution, top-level await, available globals, and error handling",
+    href: "/docs/running-scripts",
+  },
+  {
+    title: "Loading Scripts",
+    description: "Script Library tree, browsing examples, and opening scripts",
+    href: "/docs/loading-scripts",
+  },
+  {
+    title: "Saving Scripts",
+    description: "Save, Save As, naming, and overwrite detection",
+    href: "/docs/saving-scripts",
+  },
+  {
+    title: "Using Help",
+    description:
+      "Help panel, categories, search, method cards, danger levels, and in-script help()",
+    href: "/docs/using-help",
+  },
+  {
+    title: "Output Functions",
+    description:
+      "print(), render(), console.*, and formatted display helpers for items, users, roles, and templates",
+    href: "/docs/output-functions",
   },
 ];
 
