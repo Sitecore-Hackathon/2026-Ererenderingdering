@@ -73,10 +73,23 @@ async function installTemplates(helpers: SitecoreHelpers): Promise<ResolvedTempl
       if (tmpl.icon) {
         opts.icon = tmpl.icon;
       }
+      if (tmpl.standardValues) {
+        opts.createStandardValuesItem = true;
+      }
       const created = await helpers.createTemplate(folderId, tmpl.name, opts);
       if (!created?.templateId) throw new Error(`Failed to create template: ${tmpl.name}`);
       console.log(`[JSE] Created template: ${tmpl.name} (${created.templateId})`);
       ids[key] = created.templateId;
+
+      // Set standard values fields (e.g. __Icon)
+      if (tmpl.standardValues) {
+        const stdValPath = `${TEMPLATES_ROOT_PATH}/${tmpl.name}/__Standard Values`;
+        const stdVal = await helpers.getItem(stdValPath);
+        if (stdVal?.itemId) {
+          console.log(`[JSE] Setting standard values for: ${tmpl.name}`);
+          await helpers.updateItem(stdVal.itemId, tmpl.standardValues);
+        }
+      }
     }
   }
 

@@ -16,6 +16,7 @@ import { ConsoleOutput } from "./ConsoleOutput";
 import { ResultsPanel } from "./ResultsPanel";
 import { ScriptLibraryDialog } from "./ScriptLibraryDialog";
 import { HelpPanel } from "./HelpPanel";
+import { AboutDialog } from "./AboutDialog";
 
 export function ScriptingConsole() {
   const { client, isInitialized } = useMarketplaceClient();
@@ -40,6 +41,7 @@ export function ScriptingConsole() {
   );
   const [storageMode, setStorageMode] = useState<"sitecore" | "local">("local");
   const [helpOpen, setHelpOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   // Ensure activeTabId is set on mount (handles migration / empty state)
   useEffect(() => {
@@ -177,6 +179,7 @@ export function ScriptingConsole() {
           onLoad={handleLoad}
           onClear={handleClear}
           onToggleHelp={() => setHelpOpen((v) => !v)}
+          onAbout={() => setAboutOpen(true)}
           isRunning={isRunning}
           isClientReady={isInitialized && !!client}
           canSave={!!currentEditorTab?.scriptId}
@@ -239,6 +242,8 @@ export function ScriptingConsole() {
           onClose={() => setHelpOpen(false)}
         />
       )}
+
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
 
       <ScriptLibraryDialog
         open={dialogOpen}

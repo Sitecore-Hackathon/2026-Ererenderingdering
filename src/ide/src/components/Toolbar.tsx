@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Play, Save, SaveAll, FolderOpen, Trash2, Loader2, BookOpen } from "lucide-react";
+import { Play, Save, SaveAll, FolderOpen, Trash2, Loader2, BookOpen, Info } from "lucide-react";
 
 interface ToolbarProps {
   onRun: () => void;
@@ -10,13 +10,14 @@ interface ToolbarProps {
   onLoad: () => void;
   onClear: () => void;
   onToggleHelp: () => void;
+  onAbout: () => void;
   isRunning: boolean;
   isClientReady: boolean;
   canSave: boolean;
   helpOpen: boolean;
 }
 
-export function Toolbar({ onRun, onSave, onSaveAs, onLoad, onClear, onToggleHelp, isRunning, isClientReady, canSave, helpOpen }: ToolbarProps) {
+export function Toolbar({ onRun, onSave, onSaveAs, onLoad, onClear, onToggleHelp, onAbout, isRunning, isClientReady, canSave, helpOpen }: ToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b bg-card">
       <Button
@@ -52,6 +53,9 @@ export function Toolbar({ onRun, onSave, onSaveAs, onLoad, onClear, onToggleHelp
         Help
       </Button>
       <div className="ml-auto flex items-center gap-2">
+        <Button size="sm" variant="ghost" onClick={onAbout} title="About">
+          <Info className="h-4 w-4" />
+        </Button>
         {!isClientReady && (
           <span className="text-xs text-muted-foreground">
             Connecting to SDK...

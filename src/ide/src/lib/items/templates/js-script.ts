@@ -10,4 +10,7 @@ export const jsScriptTemplate: TemplateDef = {
       fields: [{ name: "Script", type: "Multi-Line Text" }],
     },
   ],
+  standardValues: {
+    __Icon: ICONS.jsScript,
+  },
 };
