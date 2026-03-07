@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const docs = [
@@ -50,8 +51,11 @@ const docs = [
 export default function DocsIndexPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="mb-2 text-3xl font-bold">Documentation</h1>
-      <p className="mb-8 text-muted-foreground">
+      <div className="mb-6 flex items-center gap-3">
+        <Image src="/logo.png" alt="Sitecore JavaScript Extensions" width={48} height={48} />
+        <h1 className="text-3xl font-bold">Documentation</h1>
+      </div>
+      <p className="mb-8 ml-[60px] text-muted-foreground">
         Browse the available documentation pages below.
       </p>
       <ul className="space-y-3">
