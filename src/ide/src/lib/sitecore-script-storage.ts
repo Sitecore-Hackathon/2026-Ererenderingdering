@@ -98,6 +98,9 @@ export function createSitecoreScriptStorage(helpers: SitecoreHelpers, jsScriptTe
         name,
         { Script: code }
       );
+      if (!created?.itemId) {
+        throw new Error("Failed to create script item in Sitecore");
+      }
       return {
         id: created.itemId,
         name: created.name,

@@ -1,20 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Play, Save, FolderOpen, Trash2, Loader2, BookOpen } from "lucide-react";
+import { Play, Save, SaveAll, FolderOpen, Trash2, Loader2, BookOpen } from "lucide-react";
 
 interface ToolbarProps {
   onRun: () => void;
   onSave: () => void;
+  onSaveAs: () => void;
   onLoad: () => void;
   onClear: () => void;
   onToggleHelp: () => void;
   isRunning: boolean;
   isClientReady: boolean;
+  canSave: boolean;
   helpOpen: boolean;
 }
 
-export function Toolbar({ onRun, onSave, onLoad, onClear, onToggleHelp, isRunning, isClientReady, helpOpen }: ToolbarProps) {
+export function Toolbar({ onRun, onSave, onSaveAs, onLoad, onClear, onToggleHelp, isRunning, isClientReady, canSave, helpOpen }: ToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b bg-card">
       <Button
@@ -29,9 +31,13 @@ export function Toolbar({ onRun, onSave, onLoad, onClear, onToggleHelp, isRunnin
         )}
         {isRunning ? "Running..." : "Run"}
       </Button>
-      <Button size="sm" variant="outline" onClick={onSave}>
+      <Button size="sm" variant="outline" onClick={onSave} disabled={!canSave} title={canSave ? "Save to existing script" : "No linked script — use Save As"}>
         <Save className="h-4 w-4 mr-1" />
         Save
+      </Button>
+      <Button size="sm" variant="outline" onClick={onSaveAs}>
+        <SaveAll className="h-4 w-4 mr-1" />
+        Save As
       </Button>
       <Button size="sm" variant="outline" onClick={onLoad}>
         <FolderOpen className="h-4 w-4 mr-1" />

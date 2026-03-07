@@ -26,9 +26,11 @@ function TreeNode({
   node,
   depth,
   selectedId,
+  highlightedScriptId,
   onSelect,
   onDoubleClick,
   onDelete,
+  onSelectScript,
   expandedIds,
   toggleExpanded,
   mode = "load",
@@ -37,9 +39,11 @@ function TreeNode({
   node: ScriptTreeNode;
   depth: number;
   selectedId: string | null;
+  highlightedScriptId?: string | null;
   onSelect: (node: ScriptTreeNode) => void;
   onDoubleClick: (node: ScriptTreeNode) => void;
   onDelete: (id: string) => void;
+  onSelectScript?: (node: ScriptTreeNode) => void;
   expandedIds: Set<string>;
   toggleExpanded: (id: string) => void;
   mode?: "save" | "load";
@@ -47,10 +51,11 @@ function TreeNode({
 }) {
   const isFolder = node.type === "folder";
   const isExpanded = expandedIds.has(node.id);
-  const isSelected = selectedId === node.id;
-
-  // In save mode, skip script nodes (only show folders)
-  if (mode === "save" && !isFolder) return null;
+  const isSelected = isFolder
+    ? selectedId === node.id
+    : mode === "save"
+      ? highlightedScriptId === node.id
+      : selectedId === node.id;
 
   return (
     <>
@@ -61,13 +66,14 @@ function TreeNode({
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => {
           if (isDisabled) {
-            // Still allow expanding/collapsing disabled folders
             if (isFolder) toggleExpanded(node.id);
             return;
           }
           if (mode === "save" && isFolder) {
             onSelect(node);
             toggleExpanded(node.id);
+          } else if (mode === "save" && !isFolder) {
+            onSelectScript?.(node);
           } else if (isFolder) {
             toggleExpanded(node.id);
           } else {
@@ -121,9 +127,11 @@ function TreeNode({
           node={child}
           depth={depth + 1}
           selectedId={selectedId}
+          highlightedScriptId={highlightedScriptId}
           onSelect={onSelect}
           onDoubleClick={onDoubleClick}
           onDelete={onDelete}
+          onSelectScript={onSelectScript}
           expandedIds={expandedIds}
           toggleExpanded={toggleExpanded}
           mode={mode}
@@ -148,6 +156,8 @@ export function ScriptLibraryDialog({
   const [selectedNode, setSelectedNode] = useState<ScriptTreeNode | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedFolderName, setSelectedFolderName] = useState<string>("User Scripts");
+  const [overwriteTarget, setOverwriteTarget] = useState<ScriptTreeNode | null>(null);
+  const [confirmOverwrite, setConfirmOverwrite] = useState(false);
   const [loading, setLoading] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -178,6 +188,8 @@ export function ScriptLibraryDialog({
     if (open) {
       setSaveName("");
       setSelectedNode(null);
+      setOverwriteTarget(null);
+      setConfirmOverwrite(false);
       loadTree();
     }
   }, [open, loadTree]);
@@ -193,11 +205,47 @@ export function ScriptLibraryDialog({
 
   async function handleSave() {
     if (!saveName.trim()) return;
+
+    // If there's an overwrite target and we haven't confirmed yet, ask
+    if (overwriteTarget && !confirmOverwrite) {
+      setConfirmOverwrite(true);
+      return;
+    }
+
     setLoading(true);
-    const script = await backend.saveScript(saveName.trim(), currentCode, selectedFolderId ?? undefined);
+    let script: SavedScript;
+    if (overwriteTarget && confirmOverwrite) {
+      // Overwrite existing script
+      const updated = await backend.updateScript(overwriteTarget.id, { code: currentCode });
+      script = updated ?? { id: overwriteTarget.id, name: overwriteTarget.name, code: currentCode, lastModified: Date.now() };
+    } else {
+      script = await backend.saveScript(saveName.trim(), currentCode, selectedFolderId ?? undefined);
+    }
     setLoading(false);
     onSaved?.(script);
     onOpenChange(false);
+  }
+
+  function handleSelectScriptForOverwrite(node: ScriptTreeNode) {
+    setSaveName(node.name);
+    setOverwriteTarget(node);
+    setConfirmOverwrite(false);
+    // Find and select the parent folder
+    function findParent(nodes: ScriptTreeNode[], targetId: string): ScriptTreeNode | null {
+      for (const n of nodes) {
+        if (n.children?.some((c) => c.id === targetId)) return n;
+        if (n.children) {
+          const found = findParent(n.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+    const parent = findParent(tree, node.id);
+    if (parent) {
+      setSelectedFolderId(parent.id);
+      setSelectedFolderName(parent.name);
+    }
   }
 
   function handleLoad() {
@@ -259,12 +307,16 @@ export function ScriptLibraryDialog({
                           node={node}
                           depth={0}
                           selectedId={selectedFolderId}
+                          highlightedScriptId={overwriteTarget?.id ?? null}
                           onSelect={(n) => {
                             setSelectedFolderId(n.id);
                             setSelectedFolderName(n.name);
+                            setOverwriteTarget(null);
+                            setConfirmOverwrite(false);
                           }}
                           onDoubleClick={() => {}}
                           onDelete={() => {}}
+                          onSelectScript={handleSelectScriptForOverwrite}
                           expandedIds={expandedIds}
                           toggleExpanded={toggleExpanded}
                           mode="save"
@@ -279,13 +331,25 @@ export function ScriptLibraryDialog({
             <Input
               placeholder="Script name..."
               value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
+              onChange={(e) => {
+                setSaveName(e.target.value);
+                setOverwriteTarget(null);
+                setConfirmOverwrite(false);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
               autoFocus
             />
-            <Button onClick={handleSave} disabled={!saveName.trim() || loading}>
+            <Button
+              onClick={handleSave}
+              disabled={!saveName.trim() || loading}
+              className={confirmOverwrite ? "bg-orange-500 hover:bg-orange-600" : ""}
+            >
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Save to {selectedFolderName}
+              {confirmOverwrite
+                ? `Overwrite "${overwriteTarget?.name}"?`
+                : overwriteTarget
+                  ? `Overwrite in ${selectedFolderName}`
+                  : `Save to ${selectedFolderName}`}
             </Button>
           </div>
         ) : (

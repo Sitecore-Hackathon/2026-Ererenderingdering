@@ -11,6 +11,7 @@ import { installModule } from "@/src/lib/item-installer";
 import { useEditorStore } from "@/src/stores/editor-store";
 import { MonacoEditor, type MonacoEditorHandle } from "./MonacoEditor";
 import { Toolbar } from "./Toolbar";
+import { EditorTabs } from "./EditorTabs";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { ResultsPanel } from "./ResultsPanel";
 import { ScriptLibraryDialog } from "./ScriptLibraryDialog";
@@ -18,12 +19,17 @@ import { HelpPanel } from "./HelpPanel";
 
 export function ScriptingConsole() {
   const { client, isInitialized } = useMarketplaceClient();
-  const { code: persistedCode, setCode } = useEditorStore();
+  const { tabs, activeTabId, setActiveTab, updateTabCode, openTab, linkTabToScript } =
+    useEditorStore();
+  const currentEditorTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
   const editorRef = useRef<MonacoEditorHandle>(null);
+  const switchingTabRef = useRef(false);
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
   const [isRunning, setIsRunning] = useState(false);
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
   const [htmlOutput, setHtmlOutput] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("console");
+  const [activeOutputTab, setActiveOutputTab] = useState("console");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"save" | "load">("save");
   const [outputHeight, setOutputHeight] = useState(250);
@@ -34,6 +40,21 @@ export function ScriptingConsole() {
   );
   const [storageMode, setStorageMode] = useState<"sitecore" | "local">("local");
   const [helpOpen, setHelpOpen] = useState(false);
+
+  // Ensure activeTabId is set on mount (handles migration / empty state)
+  useEffect(() => {
+    if (!activeTabId && tabs.length > 0) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [activeTabId, tabs, setActiveTab]);
+
+  // Sync editor content when switching tabs
+  useEffect(() => {
+    if (!editorRef.current || !currentEditorTab) return;
+    switchingTabRef.current = true;
+    editorRef.current.setValue(currentEditorTab.code);
+    switchingTabRef.current = false;
+  }, [activeTabId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
@@ -87,7 +108,7 @@ export function ScriptingConsole() {
     if (!code.trim()) return;
 
     setIsRunning(true);
-    setActiveTab("console");
+    setActiveOutputTab("console");
 
     const result = await runScript(code, helpers);
 
@@ -103,7 +124,7 @@ export function ScriptingConsole() {
 
     if (result.htmlOutput) {
       setHtmlOutput(result.htmlOutput);
-      setActiveTab("results");
+      setActiveOutputTab("results");
     }
 
     if (result.returnValue !== undefined && !result.error) {
@@ -125,7 +146,13 @@ export function ScriptingConsole() {
     setIsRunning(false);
   }, [helpers]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
+    if (!currentEditorTab?.scriptId) return;
+    const code = editorRef.current?.getValue() ?? "";
+    await storageBackend.updateScript(currentEditorTab.scriptId, { code });
+  }, [currentEditorTab, storageBackend]);
+
+  const handleSaveAs = useCallback(() => {
     setDialogMode("save");
     setDialogOpen(true);
   }, []);
@@ -146,20 +173,28 @@ export function ScriptingConsole() {
         <Toolbar
           onRun={handleRun}
           onSave={handleSave}
+          onSaveAs={handleSaveAs}
           onLoad={handleLoad}
           onClear={handleClear}
           onToggleHelp={() => setHelpOpen((v) => !v)}
           isRunning={isRunning}
           isClientReady={isInitialized && !!client}
+          canSave={!!currentEditorTab?.scriptId}
           helpOpen={helpOpen}
         />
+
+        <EditorTabs />
 
         <div className="flex-1 min-h-0">
           <MonacoEditor
             ref={editorRef}
-            defaultValue={persistedCode}
+            defaultValue={currentEditorTab?.code ?? ""}
             onRunShortcut={handleRun}
-            onChange={setCode}
+            onChange={(value) => {
+              if (!switchingTabRef.current && activeTabIdRef.current) {
+                updateTabCode(activeTabIdRef.current, value);
+              }
+            }}
           />
         </div>
 
@@ -177,7 +212,7 @@ export function ScriptingConsole() {
         </div>
 
         <div style={{ height: outputHeight }} className="flex flex-col min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+          <Tabs value={activeOutputTab} onValueChange={setActiveOutputTab} className="flex flex-col h-full">
             <TabsList variant="line" className="px-2 border-b">
               <TabsTrigger value="console" className="text-xs">
                 Console
@@ -210,7 +245,14 @@ export function ScriptingConsole() {
         onOpenChange={setDialogOpen}
         mode={dialogMode}
         currentCode={editorRef.current?.getValue() ?? ""}
-        onLoad={(script) => editorRef.current?.setValue(script.code)}
+        onLoad={(script) => {
+          openTab({ scriptId: script.id, name: script.name, code: script.code });
+        }}
+        onSaved={(script) => {
+          if (activeTabId) {
+            linkTabToScript(activeTabId, script.id, script.name);
+          }
+        }}
         backend={storageBackend}
       />
     </div>

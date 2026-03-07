@@ -18,7 +18,7 @@ export interface ScriptTreeNode {
 export interface ScriptStorageBackend {
   listScripts(): Promise<SavedScript[]>;
   listTree(): Promise<ScriptTreeNode[]>;
-  saveScript(name: string, code: string): Promise<SavedScript>;
+  saveScript(name: string, code: string, parentId?: string): Promise<SavedScript>;
   loadScript(id: string): Promise<SavedScript | undefined>;
   updateScript(id: string, updates: Partial<Pick<SavedScript, "name" | "code">>): Promise<SavedScript | undefined>;
   deleteScript(id: string): Promise<boolean>;
