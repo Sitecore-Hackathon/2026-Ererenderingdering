@@ -9,7 +9,7 @@ To use Sitecore JavaScript Extensions with your Sitecore XM Cloud instance, regi
 3. Enter **"Sitecore JavaScript Extensions"** as the app name
 4. Select **Custom** as the app type
 5. Click **Create**
-![Create App](img/create-app.png)
+![Create App](/docs-img/create-app.png)
 
 ## Extension Points
 
@@ -18,7 +18,7 @@ Enable the following extension points for the app:
 - **Standalone** — Opens the IDE as a standalone app from the apps list
 - **Full screen** — Opens the IDE in full-screen mode
 
-![Extension Points](img/extension-points.png)
+![Extension Points](/docs-img/extension-points.png)
 
 ## API Permissions
 
@@ -47,7 +47,7 @@ Set the **Deployment URL** to where your app is hosted:
 4. Select the Sitecore instances where you want it installed
 5. Review permissions and click **Install**
 
-![Install App](img/install-app.png)
+![Install App](/docs-img/install-app.png)
 
 ## Auto-Installed Sitecore Items
 

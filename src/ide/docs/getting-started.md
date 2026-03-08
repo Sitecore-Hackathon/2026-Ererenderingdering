@@ -4,7 +4,7 @@ Sitecore JavaScript Extensions is a modern reimagining of [Sitecore PowerShell E
 
 Write and execute JavaScript to automate tasks, manipulate content, manage templates, publish, and more — all from within Sitecore XM Cloud.
 
-![Application Overview](img/application-overview.png)
+![Application Overview](/docs-img/application-overview.png)
 
 ## UI Overview
 
@@ -15,9 +15,9 @@ The IDE consists of:
 - **Console tab** — Text output from `print()`, `console.log()`, and errors
 - **Results tab** — Rich HTML output from `render()` and display helpers
 
-![Toolbar](img/ui-toolbar.png)
-![Editor](img/ui-editor.png)
-![Output](img/ui-output.png)
+![Toolbar](/docs-img/ui-toolbar.png)
+![Editor](/docs-img/ui-editor.png)
+![Output](/docs-img/ui-output.png)
 
 ## Quick Start
 

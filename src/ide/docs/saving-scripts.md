@@ -7,7 +7,7 @@ The **Save** button updates the currently linked script — the script you opene
 - If the current tab is not linked to a saved script (e.g., a new untitled script), the Save button is disabled
 - Use **Save As** instead to save a new script
 
-![Save Button](img/save-button.png)
+![Save Button](/docs-img/save-button.png)
 
 ## Save As
 
@@ -18,7 +18,7 @@ The **Save As** button opens the Save dialog, allowing you to save the current s
 3. Enter a name for your script
 4. Click **Save**
 
-![Save As Dialog](img/save-as-dialog.png)
+![Save As Dialog](/docs-img/save-as-dialog.png)
 
 ## Overwrite Detection
 

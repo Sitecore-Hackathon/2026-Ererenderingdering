@@ -69,7 +69,7 @@ const item = await sc.Content.getItem("/sitecore/content/Home");
 renderItem(item);
 ```
 
-![Render Item Card](img/render-item-card.png)
+![Render Item Card](/docs-img/render-item-card.png)
 
 ## `printUser(user)` / `renderUser(user)`
 
@@ -96,7 +96,7 @@ const user = await sc.Security.getCurrentUser();
 renderUser(user);
 ```
 
-![Render User Card](img/render-user-card.png)
+![Render User Card](/docs-img/render-user-card.png)
 
 ## `printRole(role)` / `renderRole(role)`
 
@@ -121,7 +121,7 @@ const roles = await sc.Security.getRoles();
 renderRole(roles[0]);
 ```
 
-![Render Role Card](img/render-role-card.png)
+![Render Role Card](/docs-img/render-role-card.png)
 
 ## `printTemplate(template)` / `renderTemplate(template)`
 

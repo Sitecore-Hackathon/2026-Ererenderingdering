@@ -8,13 +8,13 @@ The script editor is powered by [Monaco Editor](https://microsoft.github.io/mona
 - Autocomplete and IntelliSense
 - Multiple editor tabs for working with several scripts at once
 
-![Monaco Editor](img/monaco-editor.png)
+![Monaco Editor](/docs-img/monaco-editor.png)
 
 ## Executing Scripts
 
 Run your script by pressing **Ctrl+Enter** or clicking the **Run** button in the toolbar.
 
-![Run Button](img/run-button.png)
+![Run Button](/docs-img/run-button.png)
 
 ## Top-Level Await
 
@@ -81,4 +81,4 @@ print(item.name); // Error if item is null
 - **Console** — Shows text output from `print()`, `console.*` calls, and errors. Each entry has a timestamp and level badge.
 - **Results** — Shows HTML output from `render()` and the rich display helpers (`renderItem`, `renderUser`, etc.). Each `render()` call replaces the previous content.
 
-![Console and Results Tabs](img/console-and-results.png)
+![Console and Results Tabs](/docs-img/console-and-results.png)

@@ -4,7 +4,7 @@
 
 Click the **Load** button in the toolbar to open the Script Library dialog.
 
-![Load Button](img/load-button.png)
+![Load Button](/docs-img/load-button.png)
 
 ## Script Library Tree
 
@@ -13,7 +13,7 @@ The Script Library is organized as a tree with two top-level folders:
 - **Examples** — Built-in example scripts that ship with the extension. These are read-only and are updated automatically when the module version changes.
 - **User Scripts** — Scripts you have saved. These are preserved across module upgrades.
 
-![Script Library Dialog](img/script-library-dialog.png)
+![Script Library Dialog](/docs-img/script-library-dialog.png)
 
 ## Selecting a Script
 
@@ -23,7 +23,7 @@ The Script Library is organized as a tree with two top-level folders:
 
 The script opens in a new editor tab. The tab is linked to the saved script, so you can later use **Save** to update it in place.
 
-![Script Loaded in Tab](img/script-loaded-in-tab.png)
+![Script Loaded in Tab](/docs-img/script-loaded-in-tab.png)
 
 ## Notes
 
