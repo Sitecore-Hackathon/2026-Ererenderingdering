@@ -4,7 +4,7 @@
 
 Toggle the Help panel by clicking the **Help** button in the toolbar. The panel opens on the right side of the editor.
 
-<!-- screenshot: help-panel -->
+![Help Panel](img/help-panel.png)
 
 ## Browsing by Category
 
@@ -29,7 +29,7 @@ Click a category to expand it and see all methods.
 
 Use the **search box** at the top of the Help panel to filter methods. The search matches against method names and descriptions, so you can search for both specific method names (e.g., "getItem") and concepts (e.g., "publish").
 
-<!-- screenshot: help-search -->
+![Help Search](img/help-search.png)
 
 ## Method Cards
 
@@ -41,7 +41,7 @@ Each method is displayed as a card showing:
 - **Parameters** — Name, type, and description for each parameter
 - **Return type** — What the method returns
 
-<!-- screenshot: help-method-card -->
+![Help Method Card](img/help-in-script.png)
 
 ## Danger Levels
 

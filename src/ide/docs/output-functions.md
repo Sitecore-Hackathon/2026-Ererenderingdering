@@ -69,7 +69,7 @@ const item = await sc.Content.getItem("/sitecore/content/Home");
 renderItem(item);
 ```
 
-<!-- screenshot: render-item-card -->
+![Render Item Card](img/render-item-card.png)
 
 ## `printUser(user)` / `renderUser(user)`
 
@@ -96,7 +96,7 @@ const user = await sc.Security.getCurrentUser();
 renderUser(user);
 ```
 
-<!-- screenshot: render-user-card -->
+![Render User Card](img/render-user-card.png)
 
 ## `printRole(role)` / `renderRole(role)`
 
@@ -121,7 +121,7 @@ const roles = await sc.Security.getRoles();
 renderRole(roles[0]);
 ```
 
-<!-- screenshot: render-role-card -->
+![Render Role Card](img/render-role-card.png)
 
 ## `printTemplate(template)` / `renderTemplate(template)`
 
@@ -147,5 +147,3 @@ Template: Sample Item
 const tmpl = await sc.Templates.getTemplate("/sitecore/templates/Sample/Sample Item");
 renderTemplate(tmpl);
 ```
-
-<!-- screenshot: render-template-card -->
