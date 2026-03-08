@@ -67,9 +67,6 @@ Welcome to the "Sitecore JavaScript Extensions" - a SitecoreAI module that bring
 
 You can open "Sitecore JavaScript Extensions" from the list of your apps in the Cloud Portal.
 
-![Apps icon](/docs/images/apps-icon.png)
-![Apps list](/docs/images/apps-list.png)
-
 During the first run, application will create few items in Sitecore content. Please be patient. Once the items are created, you will see the application itself.
 ![Application](/docs/images/application.png)
 
