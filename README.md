@@ -36,7 +36,7 @@ Welcome to the "Sitecore JavaScript Extensions" - a SitecoreAI module that bring
 1. Run `npm run build` to build the module
 1. Run `npm run start` to create run Sitecore Marketplace module
 1. Access the module at `http://localhost:3000` in your browser. You should be redirected to documentation page if the module is running correctly.
-1. Alternatively, this module is hosted on Netlify and can be accessed at [https://sitecore-hackathon-2026.netlify.app/](https://sitecore-hackathon-2026.netlify.app/)
+1. Alternatively, this module is hosted on Netlify and can be accessed at [https://sitecore-javascript-extensions.netlify.app/](https://sitecore-javascript-extensions.netlify.app/)
 
 ### Register a "Sitecore JavaScript Extensions" app in SitecoreAI
 
@@ -51,7 +51,7 @@ Welcome to the "Sitecore JavaScript Extensions" - a SitecoreAI module that bring
 1. Enable "Standalone" and "Full screen" extension points for the app.
 1. Enable *SitecoreAI APIs* and *AI skills APIs* API access
 1. Permissions *Pop-ups*, *Copy to clipboard*, and *Read from clipboard* are not required. But you will be able to write and execute your own custom JavaScript code. If you want to use any of these permissions, enable them as well.
-1. Set *Deployment URL* to `http://localhost:3000`. Or `https://sitecore-hackathon-2026.netlify.app/` if you do not want to run it locally.
+1. Set *Deployment URL* to `http://localhost:3000`. Or `https://sitecore-javascript-extensions.netlify.app/` if you do not want to run it locally.
 1. Set *App logo* to `/docs/images/logo.png`
 1. Click *Activate* to activate the app.
 
